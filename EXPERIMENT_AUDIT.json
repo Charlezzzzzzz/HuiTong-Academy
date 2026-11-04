@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-01",
+  "auditor": "project-internal engineering audit; independent reviewer unavailable",
+  "overall_verdict": "warn",
+  "integrity_status": "warn",
+  "checks": {
+    "gt_provenance": {
+      "status": "warn",
+      "details": "Gold fields are scoring-side only; fixture is deterministic and not a model result. Independent reviewer unavailable."
+    },
+    "score_normalization": {
+      "status": "pass",
+      "details": "Heuristic phrase coverage is transparent and marked heuristic_draft."
+    },
+    "result_existence": {
+      "status": "pass",
+      "details": "Strict validation passes with 72 manifest/output/record rows and zero gold-field leakage."
+    },
+    "dead_code": {
+      "status": "warn",
+      "details": "No live run or manual semantic coding in this window."
+    },
+    "scope": {
+      "status": "warn",
+      "details": "12 cases, 2 conditions, 3 repeats; no learning outcome."
+    },
+    "eval_type": "simulation_only"
+  },
+  "claims": [
+    {
+      "id": "C1",
+      "impact": "supported"
+    },
+    {
+      "id": "C2",
+      "impact": "needs_qualifier"
+    },
+    {
+      "id": "C3",
+      "impact": "unsupported"
+    }
+  ]
+}

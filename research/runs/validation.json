@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "manifest_count": 72,
+  "output_count": 72,
+  "record_count": 72,
+  "missing_output_count": 0,
+  "missing_output_run_ids": [],
+  "missing_record_count": 0,
+  "missing_record_run_ids": [],
+  "extra_record_run_ids": [],
+  "strict_schema": true,
+  "status_counts": {
+    "completed": 72
+  },
+  "run_type_counts": {
+    "fixture": 72
+  },
+  "gold_case_count": 12,
+  "gold_field_leakage": [],
+  "problems": []
+}

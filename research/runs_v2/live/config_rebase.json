@@ -1,0 +1,17 @@
+{
+  "reason": "runtime model config differs from the frozen fixture manifest",
+  "manifest_values": {
+    "model": "deepseek-v4.1-flash-1017",
+    "provider": "aliyun",
+    "region": "cn-beijing",
+    "reasoning_effort": "low"
+  },
+  "runtime_values": {
+    "model": "deepseek-chat",
+    "provider": "deepseek",
+    "region": "cn-beijing",
+    "reasoning_effort": ""
+  },
+  "config_hash": "3fab12e59e0b223312053f63a0604023a0c211c30b34007871db54de42cbec20",
+  "scope": "live batch only; fixture batch unchanged"
+}

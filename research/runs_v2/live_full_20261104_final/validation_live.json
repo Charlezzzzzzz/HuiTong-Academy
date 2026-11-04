@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "validator_version": "huitong-validate-live-v2.1",
+  "manifest_count": 288,
+  "output_count": 288,
+  "record_count": 288,
+  "completed_count": 288,
+  "failed_count": 0,
+  "output_status_counts": {
+    "completed": 288
+  },
+  "error_category_counts": {},
+  "retry_total": 1,
+  "case_count": 24,
+  "condition_counts": {
+    "ordinary": 72,
+    "audit_only": 72,
+    "preserve_only": 72,
+    "preserve_audit": 72
+  },
+  "inference_unit": "case (24); run/call is not an independent sample",
+  "gold_leakage": {
+    "count": 0,
+    "total": 0,
+    "by_level": {},
+    "by_label": {
+      "manifest": 0,
+      "outputs": 0,
+      "run_records": 0
+    },
+    "gold_string_count": 398,
+    "scanned_rows": {
+      "manifest": 288,
+      "outputs": 288,
+      "run_records": 288
+    },
+    "findings": [],
+    "checked_levels": [
+      "field_name",
+      "field_name_in_text",
+      "exact_value",
+      "distinctive_content"
+    ]
+  },
+  "warnings": [],
+  "problems": []
+}

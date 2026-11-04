@@ -1,0 +1,13 @@
+case_id,delta_required_element_coverage,delta_qualifier_retention,delta_alternative_coverage,delta_incorrect_view_retention,delta_unsupported_certainty_rate,delta_edit_trace_fidelity,delta_evidence_claim_alignment
+error_01,0.0,0.0,0.0,0.0,,,
+error_02,0.0,0.0,0.0,0.0,,,
+error_03,0.0,0.0,0.0,0.0,,,
+error_04,0.0,0.0,0.0,0.0,,,
+insufficient_01,0.0,0.0,0.0,0.0,,,
+insufficient_02,0.0,0.0,0.0,0.0,,,
+insufficient_03,0.0,0.0,0.0,0.0,,,
+insufficient_04,0.0,0.0,0.0,0.0,,,
+plural_01,0.0,0.0,0.0,0.0,,,
+plural_02,0.0,0.0,0.0,0.0,,,
+plural_03,0.0,0.0,0.0,0.0,,,
+plural_04,0.0,0.0,0.0,0.0,,,

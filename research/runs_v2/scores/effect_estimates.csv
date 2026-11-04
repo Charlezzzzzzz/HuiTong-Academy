@@ -1,0 +1,19 @@
+contrast_id,contrast_formula,metric,metric_source,unit,n_cases,estimate,ci_low,ci_high,p_value,effect_status,note
+preserve_main_effect,(preserve_only - ordinary),argument_strength_preservation,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_main_effect,(preserve_only - ordinary),unsupported_certainty_rate,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_main_effect,(preserve_only - ordinary),qualifier_retention,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_main_effect,(preserve_only - ordinary),alternative_coverage,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_main_effect,(preserve_only - ordinary),dissent_carrying,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_main_effect,(preserve_only - ordinary),edit_trace_fidelity,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+audit_main_effect,(audit_only - ordinary),argument_strength_preservation,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+audit_main_effect,(audit_only - ordinary),unsupported_certainty_rate,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+audit_main_effect,(audit_only - ordinary),qualifier_retention,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+audit_main_effect,(audit_only - ordinary),alternative_coverage,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+audit_main_effect,(audit_only - ordinary),dissent_carrying,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+audit_main_effect,(audit_only - ordinary),edit_trace_fidelity,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_x_audit_interaction,(preserve_audit - audit_only) - (preserve_only - ordinary),argument_strength_preservation,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_x_audit_interaction,(preserve_audit - audit_only) - (preserve_only - ordinary),unsupported_certainty_rate,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_x_audit_interaction,(preserve_audit - audit_only) - (preserve_only - ordinary),qualifier_retention,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_x_audit_interaction,(preserve_audit - audit_only) - (preserve_only - ordinary),alternative_coverage,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_x_audit_interaction,(preserve_audit - audit_only) - (preserve_only - ordinary),dissent_carrying,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。
+preserve_x_audit_interaction,(preserve_audit - audit_only) - (preserve_only - ordinary),edit_trace_fidelity,manual,case,24,NA,NA,NA,NA,not_available_no_manual_coding,没有人工编码时不得填入 0、点估计、区间或 p 值。

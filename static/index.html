@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>会通书院</title>
+  <meta name="theme-color" content="#EFE3C8">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="ink-fonts" rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap">
+  <script type="importmap">
+  {"imports":{"three":"{{THREE_IMPORT_URL}}"}}
+  </script>
+</head>
+<body data-state="BOOT">
+  <section id="auth-gate" class="auth-gate" aria-label="会通书院登录" hidden>
+    <div class="auth-card">
+      <div class="auth-mark">会通书院</div>
+      <h1 id="auth-title">登录会通书院工作区</h1>
+      <p id="auth-subtitle">登录后继续进入厅堂，当前浏览器会保存本地会话。</p>
+      <form id="auth-form">
+        <label>用户名<input id="auth-username" required autocomplete="username" placeholder="例如：teacher"></label>
+        <label>密码<input id="auth-password" required type="password" minlength="4" autocomplete="current-password" placeholder="至少 4 位"></label>
+        <label id="auth-confirm-row" hidden>确认密码<input id="auth-confirm" type="password" minlength="4" autocomplete="new-password"></label>
+        <label id="auth-role-row" hidden>角色<select id="auth-role"><option value="member">普通成员</option><option value="admin">管理员</option></select></label>
+        <button class="auth-submit" type="submit">登录</button>
+      </form>
+      <div id="auth-status" class="auth-status" role="status"></div>
+      <small class="auth-demo-hint">本机演示账号：admin / huitong-demo；成员：lsy / lsy-demo。生产环境请设置 HUITONG_ADMIN_PASSWORD。</small>
+      <button id="auth-toggle" class="auth-link" type="button">本地管理员账号由服务端初始化</button>
+    </div>
+  </section>
+  <canvas id="scene" aria-label="会通书院厅堂三维场景"></canvas>
+  <div id="app-shell" aria-label="会通书院工作台">
+    <aside class="app-sidebar">
+      <div class="app-brand"><span class="app-brand-mark" aria-hidden="true"><svg class="ink-person-logo" viewBox="0 0 64 64" role="img" aria-label="会通书院水墨人物徽标"><circle class="logo-wash" cx="32" cy="17" r="8"></circle><path class="logo-line" d="M22 29c3-4 17-4 20 0M20 32c-4 6-5 14-3 22M44 32c4 6 5 14 3 22M20 54c6-4 18-4 24 0M26 31c-1 8-1 15 0 22M38 31c1 8 1 15 0 22"></path><path class="logo-brush" d="M13 25c7-5 12-9 19-8M51 25c-7-5-12-9-19-8"></path><circle class="logo-seal" cx="48" cy="48" r="3"></circle></svg></span><div><strong>会通书院</strong></div></div>
+      <nav class="app-nav" aria-label="工作区导航">
+        <button class="active" type="button"><span>厅堂</span></button>
+        <button type="button"><span>会录</span></button>
+        <button type="button"><span>证据</span></button>
+        <button type="button"><span>设置</span></button>
+      </nav>
+      <div class="app-sidebar-foot"><span class="status-dot"></span><span id="session-label">本地会话已连接</span><button id="logout-button" class="logout-button" type="button">登出</button></div>
+    </aside>
+    <section class="app-stage" aria-label="中央舞台">
+      <header class="app-topbar"><div class="mode-switch" role="group" aria-label="工作模式"><button class="active" data-mode="learning" type="button">学习模式</button><button data-mode="production" type="button">生产模式</button></div><div class="stage-meta"><span class="stage-label">当前阶段 · </span><b>入席准备</b></div></header>
+    </section>
+    <aside class="evidence-dock" aria-label="会通任务与证据">
+      <article class="task-card"><div class="eyebrow">当前任务 01</div><h2>辨认席位，开启会通</h2><p>先选择模式、主题和你的功能席位，再创建房间。记忆只在后台和独立 HuiTong 记忆库中维护。</p><label class="topic-picker">论证主题<select id="topic-select"><option value="daofu">《学记》“道而弗牵”是否等于教师不介入</option><option value="bailudong">白鹿洞学规与会通程序如何约束主持权</option><option value="hetong">“和而不同”能否为异议保留提供依据</option><option value="custom">自定义主题</option></select></label><label id="custom-topic-row" class="topic-picker" hidden>自定义主题<input id="custom-topic" type="text" maxlength="500" placeholder="输入本轮要讨论的问题"></label><label id="material-row" class="topic-picker" hidden>提交材料<textarea id="material-input" rows="3" maxlength="8000" placeholder="生产模式下粘贴材料、出处或任务要求"></textarea></label><label class="seat-picker">我的席位<select id="seat-select"><option value="0">主持 · 管理阶段与分歧</option><option value="1">立论 · 提出主张与依据</option><option value="2">概念澄清 · 解释术语边界</option><option value="3">问难 · 针对主张提问</option><option value="4">证据核验 · 检查出处与支持关系</option><option value="5">异议记录 · 保留替代解释</option><option value="6">最终编辑 · 组织受约束主稿</option></select></label><div class="task-progress"><i></i></div><div class="task-actions"><button class="workspace-primary" type="button">创建会通房间</button><button class="workspace-secondary" type="button">查看会录</button><button id="ai-research" class="workspace-secondary" type="button" hidden>调用七席智能体</button></div></article>
+      <div class="evidence-kicker">证据与异议</div><h3>证据与异议</h3>
+      <div class="evidence-list"><div class="evidence-item">待核来源 <small>尚未添加可核验材料</small></div><div class="evidence-item warn">待处理异议 <small>进入会谈后记录分歧与出处</small></div></div>
+      <div class="ledger-title">证据账本</div><div class="ledger-placeholder">本轮会谈的来源、引文与处置记录<br>将在这里汇总</div>
+    </aside>
+  </div>  <main id="hud" aria-live="polite"></main>
+  <section id="admin-panel" class="admin-panel" hidden aria-label="管理员面板" role="dialog" aria-modal="true">
+    <div class="admin-head"><div><h2>工作区管理</h2></div><button id="admin-close" class="settings-close" type="button">×</button></div>
+    <div class="admin-summary" id="admin-summary"></div><div class="admin-table" id="admin-table"></div>
+  </section>
+  <section id="settings-panel" class="settings-panel" hidden aria-label="模型与接口设置" role="dialog" aria-modal="true">
+    <div class="settings-head"><div><h2>模型与接口</h2></div><button class="settings-close" type="button" aria-label="关闭设置">×</button></div>
+    <p class="settings-note">密钥只会发送到当前会通服务端。持久保存使用本机受保护配置文件；浏览器不会再次读取明文密钥。</p>
+    <div class="quick-models"><span>一键配置</span><button type="button" data-quick-provider="qwen" data-quick-model="qwen-plus">通义千问 · Qwen Plus</button><button type="button" data-quick-provider="aliyun" data-quick-model="deepseek-v4.1-flash-1017">阿里云百炼 · DeepSeek Flash</button><button type="button" data-quick-provider="deepseek" data-quick-model="deepseek-chat">DeepSeek 官方</button><button type="button" data-quick-provider="kimi" data-quick-model="kimi-k2-turbo-preview">Moonshot · Kimi</button><button type="button" data-quick-provider="ollama" data-quick-model="qwen3:8b">本地 · Ollama</button><button type="button" data-quick-provider="lmstudio" data-quick-model="local-model">本地 · LM Studio</button><button type="button" data-quick-provider="openai" data-quick-model="gpt-4o-mini">OpenAI 兼容接口</button></div>
+    <label>服务商<select id="settings-provider"></select></label>
+    <label>模型<select id="settings-model"></select></label>
+    <label>接口密钥<input id="settings-api-key" type="password" autocomplete="new-password" placeholder="云端服务商输入 Key；本地服务可留空"></label>
+    <label>兼容接口地址<input id="settings-base-url" type="url" placeholder="例如 https://.../compatible-mode/v1"></label>
+    <div class="settings-grid"><label>工作空间 ID<input id="settings-workspace" type="text" placeholder="阿里云百炼需要"></label><label>区域<input id="settings-region" type="text" value="cn-beijing"></label></div>
+    <label>保存方式<select id="settings-save-mode"><option value="session">仅当前服务会话</option><option value="persistent">保存到本机（0600）</option></select></label>
+    <div class="settings-footer">
+      <div class="settings-actions"><button id="settings-clear-key" class="settings-secondary" type="button">清除已保存 Key</button><button id="settings-test" class="settings-secondary" type="button">测试连接</button><button id="settings-save" class="settings-primary" type="button">保存配置</button></div>
+      <div id="settings-status" class="settings-status" role="status"></div>
+    </div>
+  </section>
+  <aside id="panel" aria-label="会通记录" hidden></aside>
+  <noscript><p>此页需启用 JavaScript。</p></noscript>
+  <script type="module" src="./js/workspace.js"></script>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

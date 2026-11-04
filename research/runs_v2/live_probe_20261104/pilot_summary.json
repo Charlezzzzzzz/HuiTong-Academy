@@ -1,0 +1,22 @@
+{
+  "run_type": "live",
+  "model": "deepseek-chat",
+  "provider": "deepseek",
+  "region": "cn-beijing",
+  "conditions": [
+    "ordinary"
+  ],
+  "case_ids": [
+    "error_01"
+  ],
+  "replicate": 1,
+  "max_attempts": 1,
+  "counts": {
+    "planned": 1,
+    "completed": 0,
+    "failed": 1
+  },
+  "outputs": "research/runs_v2/live_probe_20261104/outputs.jsonl",
+  "records": "research/runs_v2/live_probe_20261104/run_records.jsonl",
+  "api_key_printed": false
+}

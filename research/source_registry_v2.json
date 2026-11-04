@@ -1,0 +1,114 @@
+{
+  "material_version": "huitong-materials-v2.0.0",
+  "url_policy": "未登记可公开核验的 URL 时保留 null，并记录 url_status；不编造链接。",
+  "sources": {
+    "S01": {
+      "citation": "《礼记·学记》",
+      "locator": "“大学之法”章，“道而弗牵，强而弗抑，开而弗达”",
+      "source_type": "primary_classical",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "引文与通行本一致；尚未对照校勘本逐字核验。"
+    },
+    "S02": {
+      "citation": "《礼记·学记》",
+      "locator": "“独学而无友，则孤陋而寡闻”",
+      "source_type": "primary_classical",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "引文与通行本一致；尚未对照校勘本逐字核验。"
+    },
+    "S03": {
+      "citation": "《礼记·学记》",
+      "locator": "“善问者如攻坚木，先其易者，后其节目”",
+      "source_type": "primary_classical",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "引文与通行本一致；尚未对照校勘本逐字核验。"
+    },
+    "S04": {
+      "citation": "《论语·述而》",
+      "locator": "“不愤不启，不悱不发”",
+      "source_type": "primary_classical",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "引文与通行本一致；尚未对照校勘本逐字核验。"
+    },
+    "S05": {
+      "citation": "《论语·子路》",
+      "locator": "“君子和而不同，小人同而不和”",
+      "source_type": "primary_classical",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "引文与通行本一致；尚未对照校勘本逐字核验。"
+    },
+    "S07": {
+      "citation": "《孟子·尽心下》",
+      "locator": "“尽信书，则不如无书”",
+      "source_type": "primary_classical",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "引文与通行本一致；原文紧接着讨论《武成》篇的取舍。"
+    },
+    "S09": {
+      "citation": "研究方法通识材料：引文谱系与独立证据",
+      "locator": "本项目自编方法说明，第 2 节“同源转引”",
+      "source_type": "methods_note",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "verified_local_text",
+      "note": "本项目自编说明，非公开发表文献；不当作外部实证依据。"
+    },
+    "S10": {
+      "citation": "研究方法通识材料：编码者一致性与构念效度",
+      "locator": "本项目自编方法说明，第 4 节“一致性与效度”",
+      "source_type": "methods_note",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "verified_local_text",
+      "note": "本项目自编说明，非公开发表文献；不当作外部实证依据。"
+    },
+    "S11": {
+      "citation": "会通协议文档：房间事件与论证对象定义",
+      "locator": "huitong-web 协议对象定义（本地文档）",
+      "source_type": "local_protocol",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "verified_local_text",
+      "note": "工程内部定义，可本地复核，不代表外部理论来源。"
+    },
+    "S12": {
+      "citation": "会通协议文档：编辑审计字段定义",
+      "locator": "huitong-web 编辑审计字段（本地文档）",
+      "source_type": "local_protocol",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "verified_local_text",
+      "note": "工程内部定义，可本地复核，不代表外部理论来源。"
+    },
+    "S13": {
+      "citation": "某二次转述材料：书院讲会席位描述",
+      "locator": "转述段落，未标注原始出处",
+      "source_type": "secondary_transcription",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "转述未给出可追溯的原始出处，不能作为独立证据。"
+    },
+    "S14": {
+      "citation": "某二次转述材料：译场分工描述",
+      "locator": "转述段落，未标注原始出处",
+      "source_type": "secondary_transcription",
+      "url": null,
+      "url_status": "not_registered",
+      "verification_status": "unverified_pending_human_audit",
+      "note": "转述未给出可追溯的原始出处，不能作为独立证据。"
+    }
+  }
+}

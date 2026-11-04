@@ -1,0 +1,80 @@
+{
+  "protocol_version": "huitong-mechanism-2x2-v2.0",
+  "gateway_version": "huitong-model-gateway-v1",
+  "provider": "aliyun",
+  "region": "cn-beijing",
+  "model": "deepseek-v4.1-flash-1017",
+  "reasoning_effort": "low",
+  "prompt_version": "editor-v2.0.0",
+  "material_version": "huitong-materials-v2.0.0",
+  "annotation_version": "huitong-gold-v2.0.0",
+  "replicates": 3,
+  "single_call_per_run": true,
+  "design": {
+    "type": "2x2_component_ablation",
+    "factors": {
+      "preserve": {
+        "label": "论证保持规则",
+        "levels": {
+          "0": "关闭",
+          "1": "开启"
+        }
+      },
+      "audit": {
+        "label": "编辑审计记录",
+        "levels": {
+          "0": "关闭",
+          "1": "开启"
+        }
+      }
+    },
+    "cell_count": 4,
+    "invariant_across_conditions": [
+      "material_payload",
+      "evidence",
+      "source_links",
+      "verification_records",
+      "dissent_records",
+      "model",
+      "time_structure",
+      "replicate_count",
+      "random_seed"
+    ],
+    "only_condition_instruction_varies": true,
+    "primary_inference_unit": "case",
+    "replicates_are_not_independent_samples": true
+  },
+  "conditions": {
+    "ordinary": {
+      "label": "普通编辑",
+      "preserve": 0,
+      "audit": 0,
+      "instruction": "把给定的中间论证材料编辑成一篇可读的短论，忠实呈现材料中的主张、证据与未决问题。不要添加材料之外的事实，不要改变原有措辞所表达的判断。"
+    },
+    "audit_only": {
+      "label": "仅编辑审计",
+      "preserve": 0,
+      "audit": 1,
+      "instruction": "把给定的中间论证材料编辑成一篇可读的短论，忠实呈现材料中的主张、证据与未决问题。同时，在 edit_audit 中逐条登记你在编辑过程中造成的语义变更：变更对象（主张编号或段落位置）、变更前后的含义、变更理由。不要省略任何语义变更。"
+    },
+    "preserve_only": {
+      "label": "仅论证保持",
+      "preserve": 1,
+      "audit": 0,
+      "instruction": "把给定的中间论证材料编辑成一篇可读的短论。保持每条主张原有的论证强度：不得把限定、未决或证据不足的内容改写为确定断言；保留材料中列出的反例、分歧与证据缺口，并在正文中标明其状态；不得删除必要限定。"
+    },
+    "preserve_audit": {
+      "label": "完整会通机制",
+      "preserve": 1,
+      "audit": 1,
+      "instruction": "把给定的中间论证材料编辑成一篇可读的短论。保持每条主张原有的论证强度：不得把限定、未决或证据不足的内容改写为确定断言；保留材料中列出的反例、分歧与证据缺口并标明状态；不得删除必要限定。同时在 edit_audit 中逐条登记语义变更：变更对象、变更前后含义、变更理由，以及该变更是否改变了论证强度。"
+    }
+  },
+  "canonical_condition_order": [
+    "ordinary",
+    "audit_only",
+    "preserve_only",
+    "preserve_audit"
+  ],
+  "expected_run_units": 288
+}

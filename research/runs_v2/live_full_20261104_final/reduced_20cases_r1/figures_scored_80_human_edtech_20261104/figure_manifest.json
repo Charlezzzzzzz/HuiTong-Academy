@@ -1,0 +1,24 @@
+{
+  "analysis_dir": "/Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/research/runs_v2/live_full_20261104_final/reduced_20cases_r1/scored_results_80_human_edtech_20261104",
+  "figure_dir": "/Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/research/runs_v2/live_full_20261104_final/reduced_20cases_r1/figures_scored_80_human_edtech_20261104",
+  "n_cases": 20,
+  "inference_unit": "case",
+  "design": "20 cases × 4 conditions × 1 replicate",
+  "s6_status": "not_available_without_anonymized_edit_audit",
+  "formats": [
+    "png",
+    "svg",
+    "pdf"
+  ],
+  "figures": [
+    "figure_01_effect_forest.png",
+    "figure_02_case_condition_profiles.png",
+    "figure_03_case_condition_heatmap.png",
+    "figure_04_dimension_profile.png",
+    "figure_05_tap_distribution.png",
+    "figure_06_quality_cost.png",
+    "figure_07_s6_status.png"
+  ],
+  "raw_model_text_read": false,
+  "gold_read": false
+}

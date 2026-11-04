@@ -1,0 +1,23 @@
+{
+  "base_batch": "research/runs_v2/live_full_20261104_authorized_retry",
+  "retry_batch": "research/runs_v2/live_retry_error02_audit_r3_20261104",
+  "final_batch": "research/runs_v2/live_full_20261104_final",
+  "replaced": [
+    {
+      "file": "outputs.jsonl",
+      "run_id": "0e381666d01396768ff7",
+      "status": "completed"
+    },
+    {
+      "file": "run_records.jsonl",
+      "run_id": "0e381666d01396768ff7",
+      "status": "completed"
+    }
+  ],
+  "counts": {
+    "planned": 288,
+    "completed": 288,
+    "failed": 0
+  },
+  "api_key_printed": false
+}

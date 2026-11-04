@@ -1,0 +1,25 @@
+{
+  "run_type": "live",
+  "model": "deepseek-chat",
+  "provider": "deepseek",
+  "region": "cn-beijing",
+  "conditions": [
+    "ordinary",
+    "audit_only",
+    "preserve_only",
+    "preserve_audit"
+  ],
+  "case_ids": [
+    "error_01"
+  ],
+  "replicate": 1,
+  "max_attempts": 2,
+  "counts": {
+    "planned": 4,
+    "completed": 4,
+    "failed": 0
+  },
+  "outputs": "/Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/research/runs_v2/live/outputs.jsonl",
+  "records": "/Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/research/runs_v2/live/run_records.jsonl",
+  "api_key_printed": false
+}

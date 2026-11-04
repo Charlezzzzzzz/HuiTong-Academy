@@ -1,0 +1,23 @@
+{
+  "score_sheets": {
+    "/Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/research/runs_v2/live_full_20261104_final/reduced_20cases_r1/scoring_workbook_80rows_coder_human_expert_20261104.xlsx": {
+      "coder_id": "human_edtech_expert_01",
+      "rows": 80
+    }
+  },
+  "n_scored_rows": 80,
+  "n_cases": 20,
+  "n_expected_cases": 20,
+  "n_conditions": 4,
+  "expected_conditions": 4,
+  "inference_unit": "case",
+  "design": "20 cases × 4 conditions × 1 replicate",
+  "repeat_stability_estimated": false,
+  "bootstrap_draws": 10000,
+  "seed": 20261103,
+  "na_rule": "NA is excluded from metric denominators and never converted to zero",
+  "missing_blind_rows": [],
+  "s6_status": "not_available_without_anonymized_edit_audit",
+  "status": "scored",
+  "source_outputs": "/Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/research/runs_v2/live_full_20261104_final/reduced_20cases_r1/outputs_20cases_r1.jsonl"
+}

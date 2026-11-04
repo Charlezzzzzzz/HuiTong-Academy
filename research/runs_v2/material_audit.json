@@ -1,0 +1,141 @@
+{
+  "material_version": "huitong-materials-v2.0.0",
+  "schema_id": "huitong-materials-v2.0.0",
+  "case_count": 24,
+  "unique_case_count": 24,
+  "case_type_counts": {
+    "error": 8,
+    "plural": 8,
+    "insufficient": 8
+  },
+  "case_type_balance_ok": true,
+  "required_fields_present": true,
+  "schema_errors": [],
+  "hash_mismatch": [],
+  "structure_counts": {
+    "claims_total": 48,
+    "evidence_total": 55,
+    "links_total": 76,
+    "dissent_total": 26,
+    "claims_per_case": {
+      "min": 2,
+      "max": 2
+    },
+    "evidence_per_case": {
+      "min": 2,
+      "max": 3
+    },
+    "links_per_case": {
+      "min": 3,
+      "max": 4
+    },
+    "dissent_per_case": {
+      "min": 0,
+      "max": 2
+    }
+  },
+  "verification_status_counts": {
+    "verified_quote": 10,
+    "verified_local": 43,
+    "unverified_secondary": 2
+  },
+  "evidence_direction_counts": {
+    "supports": 29,
+    "qualifies": 10,
+    "refutes": 13,
+    "insufficient": 3
+  },
+  "source_linkage": {
+    "source_ids_used": [
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S07",
+      "S09",
+      "S10",
+      "S11",
+      "S12",
+      "S13",
+      "S14"
+    ],
+    "source_registry_ids": [
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S07",
+      "S09",
+      "S10",
+      "S11",
+      "S12",
+      "S13",
+      "S14"
+    ],
+    "registry_unused_ids": [],
+    "ids_missing_from_registry": [],
+    "source_link_coverage": "24/24 案例均至少一个来源；每条证据均登记 source_ids",
+    "url_registered_count": 0,
+    "url_coverage_rate": "0/12",
+    "url_policy": "未登记可公开核验的 URL 时保留 null，并记录 url_status；不编造链接。",
+    "verified_local_text_count": 4,
+    "unverified_pending_human_audit_count": 8,
+    "evidence_source_missing": [],
+    "link_target_missing": []
+  },
+  "gold_separation": {
+    "gold_file": "annotation_only_v2.jsonl",
+    "gold_case_count": 24,
+    "case_set_equal": true,
+    "gold_fields_found_outside_scoring_side": [],
+    "gold_object_hash_mismatch": [],
+    "gold_row_hash_mismatch": [],
+    "generation_whitelist": [
+      "case_id",
+      "case_type",
+      "topic",
+      "question",
+      "task",
+      "source_ids",
+      "material_version",
+      "intermediate_argument",
+      "sources",
+      "condition_id",
+      "condition_label",
+      "preserve",
+      "audit",
+      "instruction",
+      "protocol_version",
+      "prompt_version"
+    ],
+    "scoring_side_fields": [
+      "allowed_conclusion_scope",
+      "annotation_version",
+      "manual_anchor_metric",
+      "manual_anchors",
+      "must_not_claim"
+    ],
+    "conclusion": "materials_v2 行的 scoring_side 与 annotation_only_v2 只属于评分端；manifest 生成器按白名单构造 generation_input，validator 另做字段名、精确值与长文本三层泄漏扫描。"
+  },
+  "manual_anchor_metric_counts": {
+    "argument_strength_preservation": 1,
+    "evidence_claim_alignment": 1,
+    "unsupported_certainty_rate": 4,
+    "edit_trace_fidelity": 4,
+    "claim_retention": 3,
+    "dissent_carrying": 1,
+    "qualifier_retention": 1,
+    "verification_coverage": 1,
+    "alternative_coverage": 5,
+    "construct_separation": 3
+  },
+  "version_consistency": {
+    "material_version": "huitong-materials-v2.0.0",
+    "conditions_material_version": "huitong-materials-v2.0.0",
+    "annotation_version": "huitong-gold-v2.0.0",
+    "conditions_annotation_version": "huitong-gold-v2.0.0",
+    "ok": true
+  }
+}

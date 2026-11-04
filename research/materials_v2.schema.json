@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "huitong-materials-v2.0.0",
+  "title": "会通 Huitong v2 材料行 schema",
+  "description": "24 个案例的冻结材料行。scoring_side 属于评分端，禁止进入 generation_input、outputs、run_records。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id", "case_type", "topic", "question", "task", "source_ids",
+    "material_version", "intermediate_argument", "sources", "scoring_side",
+    "object_hash", "row_hash"
+  ],
+  "properties": {
+    "case_id": {"type": "string", "pattern": "^(error|plural|insufficient)_[0-9]{2}$"},
+    "case_type": {"type": "string", "enum": ["error", "plural", "insufficient"]},
+    "topic": {"type": "string", "minLength": 2},
+    "question": {"type": "string", "minLength": 8},
+    "task": {"type": "string", "minLength": 8},
+    "source_ids": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^S[0-9]{2}$"}
+    },
+    "material_version": {"type": "string", "const": "huitong-materials-v2.0.0"},
+    "intermediate_argument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claims", "evidence", "links", "verification", "dissent"],
+      "properties": {
+        "claims": {
+          "type": "array", "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim_id", "text", "strength", "status", "source_ids"],
+            "properties": {
+              "claim_id": {"type": "string", "pattern": "^C[0-9]+$"},
+              "text": {"type": "string", "minLength": 6},
+              "strength": {"type": "string", "enum": ["strong", "qualified", "weak", "open"]},
+              "status": {"type": "string", "enum": ["open", "contested", "resolved", "archived"]},
+              "source_ids": {
+                "type": "array", "minItems": 1, "uniqueItems": true,
+                "items": {"type": "string", "pattern": "^S[0-9]{2}$"}
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array", "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evidence_id", "text", "source_ids", "locator", "direction"],
+            "properties": {
+              "evidence_id": {"type": "string", "pattern": "^E[0-9]+$"},
+              "text": {"type": "string", "minLength": 6},
+              "source_ids": {
+                "type": "array", "minItems": 1, "uniqueItems": true,
+                "items": {"type": "string", "pattern": "^S[0-9]{2}$"}
+              },
+              "locator": {"type": "string", "minLength": 2},
+              "direction": {"type": "string", "enum": ["supports", "refutes", "qualifies", "insufficient"]}
+            }
+          }
+        },
+        "links": {
+          "type": "array", "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim_id", "evidence_id", "relation"],
+            "properties": {
+              "claim_id": {"type": "string", "pattern": "^C[0-9]+$"},
+              "evidence_id": {"type": "string", "pattern": "^E[0-9]+$"},
+              "relation": {"type": "string", "enum": ["supports", "refutes", "qualifies", "insufficient"]}
+            }
+          }
+        },
+        "verification": {
+          "type": "array", "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evidence_id", "status", "note"],
+            "properties": {
+              "evidence_id": {"type": "string", "pattern": "^E[0-9]+$"},
+              "status": {
+                "type": "string",
+                "enum": ["verified_quote", "verified_local", "unverified_secondary", "insufficient"]
+              },
+              "note": {"type": "string", "minLength": 2}
+            }
+          }
+        },
+        "dissent": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dissent_id", "text", "status", "target_claim_id"],
+            "properties": {
+              "dissent_id": {"type": "string", "pattern": "^D[0-9]+$"},
+              "text": {"type": "string", "minLength": 6},
+              "status": {"type": "string", "enum": ["open", "addressed", "archived"]},
+              "target_claim_id": {"type": "string", "pattern": "^C[0-9]+$"}
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "citation", "locator", "source_type", "url", "url_status", "verification_status", "note"],
+        "properties": {
+          "source_id": {"type": "string", "pattern": "^S[0-9]{2}$"},
+          "citation": {"type": "string", "minLength": 2},
+          "locator": {"type": "string", "minLength": 2},
+          "source_type": {
+            "type": "string",
+            "enum": ["primary_classical", "methods_note", "local_protocol", "secondary_transcription"]
+          },
+          "url": {"type": ["string", "null"]},
+          "url_status": {"type": "string", "enum": ["not_registered", "registered_verified", "registered_unverified"]},
+          "verification_status": {
+            "type": "string",
+            "enum": ["verified_local_text", "unverified_pending_human_audit", "unverified_secondary"]
+          },
+          "note": {"type": "string", "minLength": 2}
+        }
+      }
+    },
+    "scoring_side": {
+      "type": "object",
+      "description": "评分端字段。禁止出现在 generation_input、outputs、run_records 中。",
+      "additionalProperties": false,
+      "required": [
+        "allowed_conclusion_scope", "must_not_claim", "manual_anchor_metric",
+        "manual_anchors", "annotation_version"
+      ],
+      "properties": {
+        "allowed_conclusion_scope": {
+          "type": "array", "minItems": 1, "items": {"type": "string", "minLength": 4}
+        },
+        "must_not_claim": {
+          "type": "array", "minItems": 1, "items": {"type": "string", "minLength": 4}
+        },
+        "manual_anchor_metric": {"type": "string", "minLength": 4},
+        "manual_anchors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["0", "0.5", "1"],
+          "properties": {
+            "0": {"type": "string", "minLength": 4},
+            "0.5": {"type": "string", "minLength": 4},
+            "1": {"type": "string", "minLength": 4}
+          }
+        },
+        "annotation_version": {"type": "string", "const": "huitong-gold-v2.0.0"}
+      }
+    },
+    "object_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "row_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

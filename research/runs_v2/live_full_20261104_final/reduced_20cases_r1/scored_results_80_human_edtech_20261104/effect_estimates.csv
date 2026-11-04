@@ -1,0 +1,28 @@
+contrast_id,contrast_label,metric,n_cases,estimate,ci_low,ci_high,p_value,p_holm_within_metric,holm_family,permutation,effect_status
+preserve_main_effect,preserve_only − ordinary,score_composite,20,-0.025,-0.065,0.01,0.375,1.0,score_composite,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_composite,20,-0.01,-0.04,0.02,0.765625,1.0,score_composite,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_composite,20,0.015,-0.035,0.065,0.712891,1.0,score_composite,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_S1_claim_fidelity,20,0.0,0.0,0.0,1.0,1.0,score_S1_claim_fidelity,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_S1_claim_fidelity,20,-0.025,-0.075,0.0,1.0,1.0,score_S1_claim_fidelity,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_S1_claim_fidelity,20,0.025,0.0,0.075,1.0,1.0,score_S1_claim_fidelity,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_S2_evidence_alignment,20,-0.075,-0.225,0.05,0.53125,1.0,score_S2_evidence_alignment,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_S2_evidence_alignment,20,0.0,-0.15,0.125,1.0,1.0,score_S2_evidence_alignment,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_S2_evidence_alignment,20,-0.025,-0.225,0.175,1.0,1.0,score_S2_evidence_alignment,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_S3_hedging_calibration,20,0.0,0.0,0.0,1.0,1.0,score_S3_hedging_calibration,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_S3_hedging_calibration,20,0.0,0.0,0.0,1.0,1.0,score_S3_hedging_calibration,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_S3_hedging_calibration,20,0.0,0.0,0.0,1.0,1.0,score_S3_hedging_calibration,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_S4_counterargument,19,0.0,0.0,0.0,1.0,1.0,score_S4_counterargument,exact_524288,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_S4_counterargument,19,0.0,0.0,0.0,1.0,1.0,score_S4_counterargument,exact_524288,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_S4_counterargument,19,0.0,0.0,0.0,1.0,1.0,score_S4_counterargument,exact_524288,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_S5_source_traceability,20,-0.05,-0.15,0.0,1.0,1.0,score_S5_source_traceability,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_S5_source_traceability,20,-0.025,-0.075,0.0,1.0,1.0,score_S5_source_traceability,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_S5_source_traceability,20,0.075,-0.05,0.2,0.5,1.0,score_S5_source_traceability,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_CER_claim,20,0.0,0.0,0.0,1.0,1.0,score_CER_claim,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_CER_claim,20,0.0,0.0,0.0,1.0,1.0,score_CER_claim,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_CER_claim,20,0.0,0.0,0.0,1.0,1.0,score_CER_claim,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_CER_evidence,20,-0.025,-0.075,0.0,1.0,1.0,score_CER_evidence,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_CER_evidence,20,0.0,0.0,0.0,1.0,1.0,score_CER_evidence,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_CER_evidence,20,0.025,0.0,0.075,1.0,1.0,score_CER_evidence,exact_1048576,computed_from_manual_coding
+preserve_main_effect,preserve_only − ordinary,score_CER_reasoning,20,0.0,0.0,0.0,1.0,1.0,score_CER_reasoning,exact_1048576,computed_from_manual_coding
+audit_main_effect,audit_only − ordinary,score_CER_reasoning,20,0.0,0.0,0.0,1.0,1.0,score_CER_reasoning,exact_1048576,computed_from_manual_coding
+interaction,(preserve_audit − audit_only) − (preserve_only − ordinary),score_CER_reasoning,20,0.0,0.0,0.0,1.0,1.0,score_CER_reasoning,exact_1048576,computed_from_manual_coding

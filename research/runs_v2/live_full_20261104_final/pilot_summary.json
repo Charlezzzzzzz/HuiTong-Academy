@@ -1,0 +1,48 @@
+{
+  "run_type": "live",
+  "model": "deepseek-chat",
+  "provider": "deepseek",
+  "region": "cn-beijing",
+  "conditions": [
+    "ordinary",
+    "audit_only",
+    "preserve_only",
+    "preserve_audit"
+  ],
+  "case_ids": [
+    "error_01",
+    "error_02",
+    "error_03",
+    "error_04",
+    "error_05",
+    "error_06",
+    "error_07",
+    "error_08",
+    "insufficient_01",
+    "insufficient_02",
+    "insufficient_03",
+    "insufficient_04",
+    "insufficient_05",
+    "insufficient_06",
+    "insufficient_07",
+    "insufficient_08",
+    "plural_01",
+    "plural_02",
+    "plural_03",
+    "plural_04",
+    "plural_05",
+    "plural_06",
+    "plural_07",
+    "plural_08"
+  ],
+  "replicate": 0,
+  "max_attempts": 2,
+  "counts": {
+    "planned": 288,
+    "completed": 288,
+    "failed": 0
+  },
+  "outputs": "research/runs_v2/live_full_20261104_final/outputs.jsonl",
+  "records": "research/runs_v2/live_full_20261104_final/run_records.jsonl",
+  "api_key_printed": false
+}

@@ -1,0 +1,47 @@
+{
+  "score_source": "heuristic_draft+pipeline",
+  "formal_eligible": false,
+  "manual_coding_status": "not_started",
+  "n_run_units": 288,
+  "n_case_condition_cells": 96,
+  "n_cases": 24,
+  "n_conditions": 4,
+  "n_replicate_levels": 3,
+  "n_case_condition_run_cells": 96,
+  "inference_unit": "case",
+  "independent_unit_count": 24,
+  "replicate_note": "3 次重复先在 case x condition 内聚合，不作为独立样本。",
+  "effect_status": "not_available_no_manual_coding",
+  "manual_metrics": [
+    "argument_strength_preservation",
+    "unsupported_certainty_rate",
+    "qualifier_retention",
+    "alternative_coverage",
+    "dissent_carrying",
+    "edit_trace_fidelity",
+    "evidence_claim_alignment",
+    "verification_coverage"
+  ],
+  "draft_metrics": [
+    "draft_required_element_coverage",
+    "draft_qualifier_retention",
+    "draft_alternative_coverage",
+    "draft_incorrect_view_retention"
+  ],
+  "draft_metric_warning": "draft_* 为开发期短语重合草评分，不能当作人工编码、语义分数或效应量。",
+  "pipeline_metrics": [
+    "text_length",
+    "turns",
+    "latency_ms",
+    "input_tokens",
+    "output_tokens",
+    "retry_count",
+    "interface_observed_rate"
+  ],
+  "prespecified_contrasts": [
+    "preserve_main_effect",
+    "audit_main_effect",
+    "preserve_x_audit_interaction"
+  ],
+  "na_sentinels_written": true
+}

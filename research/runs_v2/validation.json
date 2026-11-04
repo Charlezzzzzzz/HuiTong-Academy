@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "validator_version": "huitong-validate-v2.0",
+  "manifest_count": 288,
+  "output_count": 288,
+  "record_count": 288,
+  "expected_run_units": 288,
+  "case_count": 24,
+  "case_type_counts": {
+    "error": 8,
+    "plural": 8,
+    "insufficient": 8
+  },
+  "manifest_case_type_counts": {
+    "error": 96,
+    "plural": 96,
+    "insufficient": 96
+  },
+  "condition_counts": {
+    "ordinary": 72,
+    "audit_only": 72,
+    "preserve_only": 72,
+    "preserve_audit": 72
+  },
+  "replicates": 3,
+  "independent_cases": 24,
+  "independent_sampling_note": "24 个案例是推断单位；288 条运行单元不是 288 个独立样本。",
+  "run_type_counts": {
+    "fixture": 288
+  },
+  "status_counts": {
+    "completed": 288
+  },
+  "retry_total": 0,
+  "failed_run_ids": [],
+  "missing_output_count": 0,
+  "missing_output_run_ids": [],
+  "missing_record_count": 0,
+  "missing_record_run_ids": [],
+  "extra_output_run_ids": [],
+  "extra_record_run_ids": [],
+  "material_invariance_violations": [],
+  "gold_leakage": {
+    "count": 0,
+    "total": 0,
+    "by_level": {},
+    "by_label": {
+      "manifest": 0,
+      "outputs": 0,
+      "run_records": 0
+    },
+    "gold_string_count": 398,
+    "scanned_rows": {
+      "manifest": 288,
+      "outputs": 288,
+      "run_records": 288
+    },
+    "findings": [],
+    "checked_levels": [
+      "field_name",
+      "field_name_in_text",
+      "exact_value",
+      "distinctive_content"
+    ]
+  },
+  "problems": []
+}

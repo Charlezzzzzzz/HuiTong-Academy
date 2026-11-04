@@ -1,0 +1,21 @@
+{
+  "protocol_version": "huitong-edit-pressure-v1",
+  "gateway_version": "huitong-model-gateway-v1",
+  "provider": "aliyun",
+  "region": "cn-beijing",
+  "model": "deepseek-v4.1-flash-1017",
+  "reasoning_effort": "low",
+  "prompt_version": "editor-v1.0.0",
+  "material_version": "huitong-materials-v1.0.0",
+  "replicates": 3,
+  "conditions": {
+    "ordinary_edit": {
+      "label": "普通编辑",
+      "instruction": "根据相同的中间论证材料写成一篇可读文章，忠实呈现材料。"
+    },
+    "constrained_edit": {
+      "label": "受约束编辑",
+      "instruction": "写成可读文章；保持原有论证强度，保留必要限定和有证据支持的替代解释，记录语义变更及其理由，不把未决问题改写成确定结论。"
+    }
+  }
+}
