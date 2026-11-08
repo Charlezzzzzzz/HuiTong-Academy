@@ -187,7 +187,12 @@ function fetchJSON(url, options = {}, timeoutMs = 8000) {
     else external.addEventListener('abort', () => controller.abort(), { once: true });
   }
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+  const roomContext = window.huitongRoomContext;
+  const headers = { ...(options.headers || {}) };
+  if (roomContext?.participantToken && (url.startsWith('/api/session/') || url === '/api/session/start')) {
+    headers['X-Participant-Token'] = roomContext.participantToken;
+  }
+  return fetch(url, { ...options, headers, signal: controller.signal }).finally(() => {
     window.clearTimeout(timer);
   });
 }
@@ -1837,6 +1842,19 @@ async function handleStartClick() {
   state.starting = true;
   if (dom.startBtn) dom.startBtn.disabled = true;
   const selectedSeat = Number(document.querySelector('#seat-select')?.value);
+  const roomContext = window.huitongRoomContext;
+  if (!roomContext?.room?.id || !roomContext?.participantToken) {
+    state.starting = false;
+    if (dom.startBtn) dom.startBtn.disabled = false;
+    showToast('请先创建并加入会通房间。', 3200);
+    return;
+  }
+  if (Number(roomContext.participant?.seat_id) !== selectedSeat) {
+    state.starting = false;
+    if (dom.startBtn) dom.startBtn.disabled = false;
+    showToast('当前席位与房间入席不一致，请回到右侧选择已入席席位。', 3200);
+    return;
+  }
   if (Number.isInteger(selectedSeat) && selectedSeat >= 0 && selectedSeat < roles().length) {
     updateSeatedIdentity(selectedSeat);
   }
@@ -1852,7 +1870,7 @@ async function handleStartClick() {
     response = await fetchJSON('/api/session/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seat: state.seat, topic, topic_text: selectedTopic === 'custom' ? customTopic : '', mode, material }),
+      body: JSON.stringify({ room_id: roomContext.room.id, seat: state.seat, topic, topic_text: selectedTopic === 'custom' ? customTopic : '', mode, material }),
     }, 90000);
   } catch {
     state.starting = false;
@@ -1868,7 +1886,8 @@ async function handleStartClick() {
   }
   state.starting = false;
   if (dom.startBtn) dom.startBtn.disabled = false;
-  if (response.status === 201 && data.ok) {
+  const settingsProvenanceValid = Number.isInteger(Number(data.settings_version)) && Number(data.settings_version) >= 0 && /^[0-9a-f]{64}$/i.test(String(data.settings_hash || ''));
+  if (response.status === 201 && data.ok && settingsProvenanceValid) {
     resetPanel();
     state.lastSeq = 0;
     state.awaiting = false;
@@ -1879,8 +1898,11 @@ async function handleStartClick() {
       topic: data.topic,
       topicTitle: data.topic_title || '',
       mode: data.mode || mode,
+      roomId: roomContext.room.id,
       total: data.total,
       done: false,
+      settingsVersion: Number(data.settings_version),
+      settingsHash: String(data.settings_hash || ''),
     };
     setState(S.PANEL);
     return;
@@ -1889,7 +1911,8 @@ async function handleStartClick() {
     showToast(ui().session_busy, 3200);
     return;
   }
-  showToast(ui().error_generic);
+  if ((response.status === 409 || response.status === 502) && data.message) showToast(data.message, 4200);
+  else showToast(ui().error_generic);
 }
 
 async function leaveSeat() {
@@ -2332,36 +2355,124 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function appendEntry(entry, options = {}) {
-  if (!entry || entry.seq == null) return;
+function expectedRoomId() {
+  return state.session?.roomId || window.huitongRoomContext?.room?.id || '';
+}
+
+function canonicalizeForHash(value) {
+  if (Array.isArray(value)) return value.map(canonicalizeForHash);
+  if (value && typeof value === 'object') {
+    return Object.keys(value).sort().reduce((out, key) => {
+      out[key] = canonicalizeForHash(value[key]);
+      return out;
+    }, {});
+  }
+  return value;
+}
+
+function visibleEntryForHash(entry) {
+  if (entry?.kind === 'choice') {
+    return canonicalizeForHash({ text: entry.text || '', chips: entry.chips || [] });
+  }
+  return String(entry?.text || '');
+}
+
+function hasSessionSettingsProvenance(provenance) {
+  const version = Number(provenance?.settings_version);
+  const hash = String(provenance?.settings_hash || '');
+  return Number.isInteger(version) && version >= 0 && /^[0-9a-f]{64}$/i.test(hash) &&
+    version === Number(state.session?.settingsVersion) &&
+    hash.toLowerCase() === String(state.session?.settingsHash || '').toLowerCase();
+}
+
+async function hasValidLiveProvenance(entry) {
+  const provenance = entry?.provenance;
+  const shapeValid = Boolean(
+    ['utterance', 'prompt', 'choice'].includes(entry?.kind) &&
+      entry?.ai_generated === true &&
+      entry?.source === 'live_api' &&
+      provenance?.source === 'live_api' &&
+      provenance?.ai_generated === true &&
+      provenance?.room_id === expectedRoomId() &&
+      provenance?.session_id === state.session?.sid &&
+      provenance?.agent_id === entry?.role_id &&
+      Number(provenance?.seat_id) === Number(entry?.seat) &&
+      typeof provenance.server_request_id === 'string' && provenance.server_request_id.length > 0 &&
+      typeof provenance.provider === 'string' && provenance.provider.length > 0 &&
+      typeof provenance.model === 'string' && provenance.model.length > 0 &&
+      typeof provenance.message_id === 'string' && provenance.message_id.length > 0 &&
+      typeof provenance.event_id === 'string' && provenance.event_id.length > 0 &&
+      hasSessionSettingsProvenance(provenance) &&
+      /^[0-9a-f]{64}$/i.test(String(provenance.output_hash || ''))
+  );
+  if (!shapeValid || !window.crypto?.subtle || !window.TextEncoder) return false;
+  const visible = entry.kind === 'choice'
+    ? JSON.stringify(visibleEntryForHash(entry))
+    : String(entry.text || '');
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(visible));
+  const actual = Array.from(new Uint8Array(bytes), (value) => value.toString(16).padStart(2, '0')).join('');
+  return actual.toLowerCase() === String(provenance.output_hash).toLowerCase();
+}
+
+function hasValidUserProvenance(entry) {
+  const provenance = entry?.provenance;
+  return Boolean(
+    entry?.ai_generated === false &&
+      entry?.source === 'user_authored' &&
+      provenance?.source === 'user_authored' &&
+      provenance?.ai_generated === false &&
+      provenance?.room_id === expectedRoomId() &&
+      provenance?.session_id === state.session?.sid &&
+      typeof provenance.message_id === 'string' && provenance.message_id.length > 0 &&
+      typeof provenance.event_id === 'string' && provenance.event_id.length > 0
+  );
+}
+
+function showLiveGenerationFailure() {
+  appendSystemEntry({ text: ui().live_generation_failed || '实时模型生成失败，当前未展示任何替代内容。' });
+  setFootStatus(ui().live_generation_failed || '实时模型生成失败，当前未展示任何替代内容。', true, false);
+}
+
+async function appendEntry(entry, options = {}) {
+  if (!entry || entry.seq == null) return false;
   const force = Boolean(options.force);
-  if (!force && entry.seq <= state.lastSeq) return;
+  if (!force && entry.seq <= state.lastSeq) return true;
   state.lastSeq = Math.max(state.lastSeq, entry.seq);
+
+  if (['utterance', 'prompt', 'choice'].includes(entry.kind) && !(await hasValidLiveProvenance(entry))) {
+    showLiveGenerationFailure();
+    return false;
+  }
 
   if (entry.human_prompt && entry.await_user) {
     if (entry.stage) setStage(stageById(entry.stage) || stages()[0]);
     updateSpeakers(null);
     showUserPrompt(entry);
-    return;
+    return true;
   }
 
   if (entry.kind === 'stage') {
     appendStageEntry(entry);
     updateSpeakers(null);
-    return;
+    return true;
   }
   if (entry.kind === 'system') {
     appendSystemEntry(entry);
     updateSpeakers(null);
-    return;
+    return true;
   }
   if (entry.kind === 'choice') {
     appendChoiceEntry(entry);
-    return;
+    return true;
   }
   const isUser = entry.kind === 'user' || entry.role_name === ui().you;
+  if (isUser && !hasValidUserProvenance(entry)) {
+    showLiveGenerationFailure();
+    return false;
+  }
   appendBubble(entry, isUser);
   if (entry.kind === 'utterance') updateSpeakers(entry.seat);
+  return true;
 }
 
 function appendStageEntry(entry) {
@@ -2513,9 +2624,10 @@ async function submitTextReply() {
   state.replyInFlight = false;
   if (dom.textSubmit) dom.textSubmit.disabled = false;
   dom.textInput.disabled = false;
+  let responseData = {};
+  try { responseData = await response.json(); } catch { responseData = {}; }
   if (response.status === 200) {
-    let data = {};
-    try { data = await response.json(); } catch { data = {}; }
+    const data = responseData;
     if (state.choiceNode && state.choiceNode.parentNode) state.choiceNode.parentNode.removeChild(state.choiceNode);
     state.choiceNode = null;
     if (data.echo) appendEntry(data.echo, { force: true });
@@ -2528,12 +2640,24 @@ async function submitTextReply() {
     beginPolling();
     return;
   }
+  if (response.status === 404) {
+    sessionLost();
+    return;
+  }
+  if (response.status === 409) {
+    state.awaiting = false;
+    if (dom.textEntry) dom.textEntry.hidden = true;
+    clearFootActions();
+    beginPolling();
+    return;
+  }
   buttons.forEach((button) => { button.disabled = false; });
-  setFootStatus(ui().error_generic, true, false);
+  setFootStatus(response.status === 502 ? (responseData.message || ui().live_generation_failed) : ui().error_generic, true, false);
 }
 
 async function replyChip(chip, seq) {
   if (!state.session || state.replyInFlight) return;
+  if (!state.awaiting || Number(seq) !== Number(state.lastSeq)) return;
   state.replyInFlight = true;
   if (dom.textEntry) dom.textEntry.hidden = true;
   const buttons = dom.footActions
@@ -2559,13 +2683,10 @@ async function replyChip(chip, seq) {
     return;
   }
   state.replyInFlight = false;
+  let responseData = {};
+  try { responseData = await response.json(); } catch { responseData = {}; }
   if (response.status === 200) {
-    let data = {};
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
+    const data = responseData;
     if (state.choiceNode && state.choiceNode.parentNode) {
       state.choiceNode.parentNode.removeChild(state.choiceNode);
     }
@@ -2594,7 +2715,7 @@ async function replyChip(chip, seq) {
     return;
   }
   for (const button of buttons) button.disabled = false;
-  setFootStatus(ui().error_generic, true, false);
+  setFootStatus(response.status === 502 ? (responseData.message || ui().live_generation_failed) : ui().error_generic, true, false);
 }
 
 function stopPolling() {
@@ -2686,6 +2807,11 @@ async function pollLoop(token) {
       sessionLost();
       return;
     }
+    if (response.status === 502) {
+      state.polling = false;
+      setFootStatus(ui().live_generation_failed || '实时模型生成失败，当前未展示任何替代内容。', true, false);
+      return;
+    }
     if (!response.ok) {
       const keep = await pollBackoff(token);
       if (!keep) return;
@@ -2711,7 +2837,11 @@ async function pollLoop(token) {
       setState(S.CLOSING);
       return;
     }
-    appendEntry(data);
+    const rendered = await appendEntry(data);
+    if (rendered === false) {
+      stopPolling();
+      return;
+    }
     if (data.await_user) {
       if (data.human_prompt) showUserPrompt(data);
       else showChips(data.chips, data.seq);
@@ -3079,54 +3209,7 @@ function enterFallback(payload, token) {
 
   const startFallbackSession = async (seat) => {
     if (!unlocked) return;
-    for (const button of seatButtons) button.disabled = true;
-    const topic =
-      (topics().find((item) => item.default) || topics()[0] || {}).id || 'chair';
-    let response;
-    try {
-      response = await fetchJSON('/api/session/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          seat,
-          topic,
-          mode: window.huitongMode || state.mode || 'learning',
-          material: document.querySelector('#material-input')?.value.trim() || '',
-        }),
-      });
-    } catch {
-      showFeedback(ui().error_generic);
-      for (const button of seatButtons) button.disabled = false;
-      return;
-    }
-    if (response.status !== 201) {
-      showFeedback(response.status === 429 ? ui().session_busy : ui().error_generic);
-      for (const button of seatButtons) button.disabled = false;
-      return;
-    }
-    let data = {};
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
-    if (!data.ok) {
-      showFeedback(ui().error_generic);
-      for (const button of seatButtons) button.disabled = false;
-      return;
-    }
-    log.hidden = false;
-    log.innerHTML = '';
-    sessionFoot.hidden = false;
-    sessionFoot.innerHTML = '';
-    state.fallbackSession = {
-      sid: data.sid,
-      seat: data.seat,
-      topic: data.topic,
-      total: data.total,
-      done: false,
-    };
-    fallbackPoll(state.fallbackSession);
+    showFeedback(ui().live_generation_failed || '实时模型生成失败，当前未展示任何替代内容。请返回工作区重试。');
   };
 
   const fallbackPoll = async (session) => {
@@ -3186,6 +3269,20 @@ function enterFallback(payload, token) {
         });
         sessionFoot.appendChild(again);
         return;
+      }
+      if (!data.human_prompt && data.kind !== 'system') {
+        const provenance = data.provenance;
+        const valid = data.kind === 'user'
+          ? provenance?.source === 'user_authored' && provenance?.ai_generated === false
+          : provenance?.source === 'live_api' && provenance?.ai_generated === true &&
+            Number.isInteger(Number(provenance?.settings_version)) && Number(provenance.settings_version) >= 0 &&
+            /^[0-9a-f]{64}$/i.test(String(provenance?.settings_hash || '')) &&
+            Number(provenance.settings_version) === Number(session.settingsVersion) &&
+            String(provenance.settings_hash).toLowerCase() === String(session.settingsHash || '').toLowerCase();
+        if (!valid || provenance?.room_id !== window.huitongRoomContext?.room?.id || provenance?.session_id !== session.sid) {
+          showFeedback(ui().live_generation_failed || '实时模型生成失败，当前未展示任何替代内容。');
+          return;
+        }
       }
       if (!data.human_prompt) {
         const line = el('p', data.kind === 'system' ? 'lead' : null);

@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "scope": "user_id+room_id+agent_id",
+  "fields": {
+    "language": {
+      "type": "enum",
+      "allowed": ["zh-Hans", "zh-Hant", "en"]
+    },
+    "tone": {
+      "type": "enum",
+      "allowed": ["concise", "neutral", "socratic"]
+    },
+    "detail_level": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
+    },
+    "challenge_intensity": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
+    },
+    "challenge_frequency": {
+      "type": "enum",
+      "allowed": ["low", "medium", "high"]
+    },
+    "evidence_reminder": {
+      "type": "enum",
+      "allowed": ["low", "medium", "high"]
+    },
+    "counterexample_priority": {
+      "type": "enum",
+      "allowed": ["low", "medium", "high"]
+    },
+    "stepwise_feedback": {
+      "type": "boolean"
+    },
+    "output_format": {
+      "type": "enum",
+      "allowed": ["paragraph", "bullets", "table"]
+    },
+    "max_response_length": {
+      "type": "integer",
+      "min": 200,
+      "max": 1200
+    },
+    "novice_explanation": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
+    },
+    "teaching_focus": {
+      "type": "enum",
+      "allowed": ["argument", "clarity", "evidence", "dissent", "editing"]
+    },
+    "additional_preference_text": {
+      "type": "string",
+      "max_length": 500,
+      "injection_guard": true
+    }
+  },
+  "immutable_fields": [
+    "role_id",
+    "seat_id",
+    "name",
+    "title",
+    "duty",
+    "tools",
+    "permissions",
+    "stage_responsibility",
+    "evidence_rules",
+    "system_prompt",
+    "output_schema",
+    "privacy_rules",
+    "provider",
+    "model",
+    "api_key",
+    "live_api_provenance"
+  ],
+  "version_policy": {
+    "optimistic_concurrency": true,
+    "new_settings_apply_to": "next_generation",
+    "history_mutation": false
+  }
+}

@@ -16,7 +16,24 @@
 </head>
 <body data-state="BOOT">
   <section id="auth-gate" class="auth-gate" aria-label="会通书院登录" hidden>
-    <div class="auth-card">
+    <section class="landing-home" aria-labelledby="landing-title">
+      <div class="landing-kicker">会通书院 · HUITONG</div>
+      <h2 id="landing-title">七席共论，让证据先于结论</h2>
+      <p class="landing-lead">一个面向课程论证与研究协作的智能体工作台。七个功能席位分别承担主持、立论、澄清、问难、证据、异议与编辑。</p>
+      <div class="landing-agents-label">七席协作结构</div>
+      <div class="landing-agent-grid" aria-label="七席智能体">
+        <article class="landing-agent-card" style="--agent-color:var(--seat-0)"><img src="./assets/avatars/seat-0.png" alt="守拙，主持代理头像"><div><strong>守拙</strong><small>主持代理</small></div></article>
+        <article class="landing-agent-card" style="--agent-color:var(--seat-1)"><img src="./assets/avatars/seat-1.png" alt="砚秋，立论代理头像"><div><strong>砚秋</strong><small>立论代理</small></div></article>
+        <article class="landing-agent-card" style="--agent-color:var(--seat-2)"><img src="./assets/avatars/seat-2.png" alt="知白，概念澄清代理头像"><div><strong>知白</strong><small>概念澄清代理</small></div></article>
+        <article class="landing-agent-card" style="--agent-color:var(--seat-3)"><img src="./assets/avatars/seat-3.png" alt="砺之，问难代理头像"><div><strong>砺之</strong><small>问难代理</small></div></article>
+        <article class="landing-agent-card" style="--agent-color:var(--seat-4)"><img src="./assets/avatars/seat-4.png" alt="竹隐，证据代理头像"><div><strong>竹隐</strong><small>证据代理</small></div></article>
+        <article class="landing-agent-card" style="--agent-color:var(--seat-5)"><img src="./assets/avatars/seat-5.png" alt="慎余，异议记录代理头像"><div><strong>慎余</strong><small>异议记录代理</small></div></article>
+        <article class="landing-agent-card" style="--agent-color:var(--seat-6)"><img src="./assets/avatars/seat-6.png" alt="编云，最终编辑代理头像"><div><strong>编云</strong><small>最终编辑代理</small></div></article>
+      </div>
+      <div class="landing-proof"><span>学习模式</span><span>生产模式</span><span>证据账本</span><span>可追溯会录</span></div>
+      <button id="landing-enter" class="landing-enter" type="button" aria-controls="auth-card" aria-expanded="false">进入书院</button>
+    </section>
+    <div id="auth-card" class="auth-card" hidden role="dialog" aria-modal="true" aria-labelledby="auth-title">
       <div class="auth-mark">会通书院</div>
       <h1 id="auth-title">登录会通书院工作区</h1>
       <p id="auth-subtitle">登录后继续进入厅堂，当前浏览器会保存本地会话。</p>
@@ -28,7 +45,8 @@
         <button class="auth-submit" type="submit">登录</button>
       </form>
       <div id="auth-status" class="auth-status" role="status"></div>
-      <small class="auth-demo-hint">本机演示账号：admin / huitong-demo；成员：lsy / lsy-demo。生产环境请设置 HUITONG_ADMIN_PASSWORD。</small>
+      <small class="auth-demo-hint">管理员账号由服务端初始化。生产环境请显式设置 HUITONG_ADMIN_PASSWORD，页面不会显示默认口令。</small>
+      <button id="auth-back" class="auth-link auth-back" type="button">返回封面</button>
       <button id="auth-toggle" class="auth-link" type="button">本地管理员账号由服务端初始化</button>
     </div>
   </section>
@@ -48,7 +66,7 @@
       <header class="app-topbar"><div class="mode-switch" role="group" aria-label="工作模式"><button class="active" data-mode="learning" type="button">学习模式</button><button data-mode="production" type="button">生产模式</button></div><div class="stage-meta"><span class="stage-label">当前阶段 · </span><b>入席准备</b></div></header>
     </section>
     <aside class="evidence-dock" aria-label="会通任务与证据">
-      <article class="task-card"><div class="eyebrow">当前任务 01</div><h2>辨认席位，开启会通</h2><p>先选择模式、主题和你的功能席位，再创建房间。记忆只在后台和独立 HuiTong 记忆库中维护。</p><label class="topic-picker">论证主题<select id="topic-select"><option value="daofu">《学记》“道而弗牵”是否等于教师不介入</option><option value="bailudong">白鹿洞学规与会通程序如何约束主持权</option><option value="hetong">“和而不同”能否为异议保留提供依据</option><option value="custom">自定义主题</option></select></label><label id="custom-topic-row" class="topic-picker" hidden>自定义主题<input id="custom-topic" type="text" maxlength="500" placeholder="输入本轮要讨论的问题"></label><label id="material-row" class="topic-picker" hidden>提交材料<textarea id="material-input" rows="3" maxlength="8000" placeholder="生产模式下粘贴材料、出处或任务要求"></textarea></label><label class="seat-picker">我的席位<select id="seat-select"><option value="0">主持 · 管理阶段与分歧</option><option value="1">立论 · 提出主张与依据</option><option value="2">概念澄清 · 解释术语边界</option><option value="3">问难 · 针对主张提问</option><option value="4">证据核验 · 检查出处与支持关系</option><option value="5">异议记录 · 保留替代解释</option><option value="6">最终编辑 · 组织受约束主稿</option></select></label><div class="task-progress"><i></i></div><div class="task-actions"><button class="workspace-primary" type="button">创建会通房间</button><button class="workspace-secondary" type="button">查看会录</button><button id="ai-research" class="workspace-secondary" type="button" hidden>调用七席智能体</button></div></article>
+      <article class="task-card"><div class="eyebrow">当前任务 01</div><h2>辨认席位，开启会通</h2><p>先选择模式、主题和你的功能席位，再创建房间。智能体回应偏好只影响表达方式，不改变角色职责、证据规则或 live API 约束。</p><label class="topic-picker">论证主题<select id="topic-select"><option value="daofu">《学记》“道而弗牵”是否等于教师不介入</option><option value="bailudong">白鹿洞学规与会通程序如何约束主持权</option><option value="hetong">“和而不同”能否为异议保留提供依据</option><option value="custom">自定义主题</option></select></label><label id="custom-topic-row" class="topic-picker" hidden>自定义主题<input id="custom-topic" type="text" maxlength="500" placeholder="输入本轮要讨论的问题"></label><label id="material-row" class="topic-picker" hidden>提交材料<textarea id="material-input" rows="3" maxlength="8000" placeholder="生产模式下粘贴材料、出处或任务要求"></textarea></label><label class="seat-picker">我的席位<select id="seat-select"><option value="0">主持 · 管理阶段与分歧</option><option value="1">立论 · 提出主张与依据</option><option value="2">概念澄清 · 解释术语边界</option><option value="3">问难 · 针对主张提问</option><option value="4">证据核验 · 检查出处与支持关系</option><option value="5">异议记录 · 保留替代解释</option><option value="6">最终编辑 · 组织受约束主稿</option></select></label><div class="task-progress"><i></i></div><div class="task-actions"><button class="workspace-primary" type="button">创建会通房间</button><button class="workspace-secondary" type="button">查看会录</button><button id="ai-research" class="workspace-secondary" type="button" hidden>调用七席智能体</button><button id="agent-settings-open" class="workspace-secondary" type="button" hidden>设置我的回应偏好</button></div></article>
       <div class="evidence-kicker">证据与异议</div><h3>证据与异议</h3>
       <div class="evidence-list"><div class="evidence-item">待核来源 <small>尚未添加可核验材料</small></div><div class="evidence-item warn">待处理异议 <small>进入会谈后记录分歧与出处</small></div></div>
       <div class="ledger-title">证据账本</div><div class="ledger-placeholder">本轮会谈的来源、引文与处置记录<br>将在这里汇总</div>
@@ -58,8 +76,8 @@
     <div class="admin-head"><div><h2>工作区管理</h2></div><button id="admin-close" class="settings-close" type="button">×</button></div>
     <div class="admin-summary" id="admin-summary"></div><div class="admin-table" id="admin-table"></div>
   </section>
-  <section id="settings-panel" class="settings-panel" hidden aria-label="模型与接口设置" role="dialog" aria-modal="true">
-    <div class="settings-head"><div><h2>模型与接口</h2></div><button class="settings-close" type="button" aria-label="关闭设置">×</button></div>
+  <section id="settings-panel" class="settings-panel" hidden aria-labelledby="settings-title" role="dialog" aria-modal="true">
+    <div class="settings-head"><div><h2 id="settings-title">模型与接口</h2></div><button class="settings-close" type="button" aria-label="关闭设置">×</button></div>
     <p class="settings-note">密钥只会发送到当前会通服务端。持久保存使用本机受保护配置文件；浏览器不会再次读取明文密钥。</p>
     <div class="quick-models"><span>一键配置</span><button type="button" data-quick-provider="qwen" data-quick-model="qwen-plus">通义千问 · Qwen Plus</button><button type="button" data-quick-provider="aliyun" data-quick-model="deepseek-v4.1-flash-1017">阿里云百炼 · DeepSeek Flash</button><button type="button" data-quick-provider="deepseek" data-quick-model="deepseek-chat">DeepSeek 官方</button><button type="button" data-quick-provider="kimi" data-quick-model="kimi-k2-turbo-preview">Moonshot · Kimi</button><button type="button" data-quick-provider="ollama" data-quick-model="qwen3:8b">本地 · Ollama</button><button type="button" data-quick-provider="lmstudio" data-quick-model="local-model">本地 · LM Studio</button><button type="button" data-quick-provider="openai" data-quick-model="gpt-4o-mini">OpenAI 兼容接口</button></div>
     <label>服务商<select id="settings-provider"></select></label>
@@ -72,6 +90,22 @@
       <div class="settings-actions"><button id="settings-clear-key" class="settings-secondary" type="button">清除已保存 Key</button><button id="settings-test" class="settings-secondary" type="button">测试连接</button><button id="settings-save" class="settings-primary" type="button">保存配置</button></div>
       <div id="settings-status" class="settings-status" role="status"></div>
     </div>
+  </section>
+  <section id="agent-settings-panel" class="settings-panel agent-settings-panel" hidden aria-labelledby="agent-settings-title" role="dialog" aria-modal="true">
+    <div class="settings-head"><div><h2 id="agent-settings-title">我的回应偏好</h2><p id="agent-settings-scope" class="settings-scope">当前席位 · 当前房间</p></div><button id="agent-settings-close" class="settings-close" type="button" aria-label="关闭回应偏好">×</button></div>
+    <p class="settings-note">这些设置只改变表达方式、提醒强度和反馈节奏。角色身份、席位职责、证据规则、阶段责任、系统安全规则和 live API 约束由服务端锁定。</p>
+    <div id="agent-settings-role" class="agent-role-card"></div>
+    <div class="settings-grid"><label>语言<select data-agent-setting="language"><option value="zh-Hans">简体中文</option><option value="zh-Hant">繁體中文</option><option value="en">English</option></select></label><label>语气<select data-agent-setting="tone"><option value="concise">简洁</option><option value="neutral">中性</option><option value="socratic">苏格拉底式追问</option></select></label></div>
+    <div class="settings-grid"><label>详细程度<input data-agent-setting="detail_level" type="range" min="1" max="5" step="1"><output data-agent-output="detail_level">3</output></label><label>问难强度<input data-agent-setting="challenge_intensity" type="range" min="1" max="5" step="1"><output data-agent-output="challenge_intensity">3</output></label></div>
+    <div class="settings-grid"><label>问难频率<select data-agent-setting="challenge_frequency"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></label><label>证据提醒<select data-agent-setting="evidence_reminder"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></label></div>
+    <div class="settings-grid"><label>反例优先级<select data-agent-setting="counterexample_priority"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></label><label>输出格式<select data-agent-setting="output_format"><option value="paragraph">段落</option><option value="bullets">要点</option><option value="table">表格</option></select></label></div>
+    <div class="settings-grid"><label>单次长度<select data-agent-setting="max_response_length"><option value="200">约 200 字</option><option value="400">约 400 字</option><option value="800">约 800 字</option><option value="1200">约 1200 字</option></select></label><label>初学者解释<input data-agent-setting="novice_explanation" type="range" min="1" max="5" step="1"><output data-agent-output="novice_explanation">3</output></label></div>
+    <label class="agent-check"><input data-agent-setting="stepwise_feedback" type="checkbox"> 分步骤给出反馈</label>
+    <label>教学重点<select data-agent-setting="teaching_focus"><option value="argument">主张与论证</option><option value="clarity">概念边界</option><option value="evidence">证据核验</option><option value="dissent">异议保留</option><option value="editing">受约束编辑</option></select></label>
+    <label>补充偏好<textarea data-agent-setting="additional_preference_text" maxlength="500" rows="3" placeholder="补充表达偏好，不能修改角色职责或要求绕过核验"></textarea></label>
+    <div id="agent-settings-version" class="settings-version" role="status"></div>
+    <label>回滚版本<select id="agent-settings-rollback"><option value="">选择已有版本</option></select></label>
+    <div class="settings-footer"><div class="settings-actions"><button id="agent-settings-cancel" class="settings-secondary" type="button">取消</button><button id="agent-settings-preview" class="settings-secondary" type="button">预览</button><button id="agent-settings-reset" class="settings-secondary" type="button">重置默认</button><button id="agent-settings-rollback-button" class="settings-secondary" type="button">回滚</button><button id="agent-settings-save" class="settings-primary" type="button">保存并启用</button></div><div id="agent-settings-status" class="settings-status" role="status" aria-live="polite"></div></div>
   </section>
   <aside id="panel" aria-label="会通记录" hidden></aside>
   <noscript><p>此页需启用 JavaScript。</p></noscript>

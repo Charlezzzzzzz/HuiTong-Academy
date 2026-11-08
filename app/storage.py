@@ -6,6 +6,7 @@ import re
 import json
 import os
 import sqlite3
+import uuid
 from pathlib import Path
 
 from .graphrag import GraphContextStore
@@ -68,7 +69,7 @@ class MemoryStore:
                 "last_seq": len(self.events[room_id]),
             }
 
-    def add_event(self, room_id, type, payload=None, *, actor_id=None, stage=None, visibility="room", idempotency_key=None):
+    def add_event(self, room_id, type, payload=None, *, actor_id=None, stage=None, visibility="room", idempotency_key=None, event_id=None):
         with self._lock:
             if room_id not in self.rooms:
                 raise KeyError(room_id)
@@ -90,6 +91,7 @@ class MemoryStore:
                 room_id=room_id,
                 type=type,
                 payload=payload or {},
+                id=event_id or uuid.uuid4().hex,
                 seq=len(stream) + 1,
                 actor_id=actor_id,
                 stage=stage,
@@ -279,7 +281,7 @@ class SQLiteStore:
                 "last_seq": int(last or 0),
             }
 
-    def add_event(self, room_id, type, payload=None, *, actor_id=None, stage=None, visibility="room", idempotency_key=None):
+    def add_event(self, room_id, type, payload=None, *, actor_id=None, stage=None, visibility="room", idempotency_key=None, event_id=None):
         if not isinstance(type, str) or not re.fullmatch(r"[a-zA-Z0-9_.-]{1,80}", type):
             raise ValueError("event_type_invalid")
         if payload is not None and not isinstance(payload, dict):
@@ -303,7 +305,7 @@ class SQLiteStore:
                         return self._event(previous)
                 seq = int(self._conn.execute("SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM events WHERE room_id = ?", (room_id,)).fetchone()["n"])
                 event = Event(
-                    room_id=room_id, type=type, payload=payload or {}, seq=seq,
+                    room_id=room_id, type=type, payload=payload or {}, id=event_id or uuid.uuid4().hex, seq=seq,
                     actor_id=actor_id, stage=stage, visibility=visibility,
                     idempotency_key=idempotency_key, created_at=time.time(),
                 )

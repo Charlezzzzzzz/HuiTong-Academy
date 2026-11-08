@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+import ipaddress
 from dataclasses import dataclass, replace
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 
 
 DEFAULT_MODEL = "deepseek-v4.1-flash-1017"
@@ -98,6 +100,38 @@ def provider_needs_api_key(provider: str | None) -> bool:
     return bool(PROVIDER_PRESETS.get(provider_id, {}).get("api_key_required", True))
 
 
+def validate_base_url(value: str) -> str:
+    """Reject credential-bearing or ambiguous provider URLs before persistence."""
+    url = str(value or "").strip().rstrip("/")
+    parsed = urlsplit(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("base_url_invalid")
+    if parsed.username or parsed.password or parsed.fragment:
+        raise ValueError("base_url_invalid")
+    if any(any(token in key.lower() for token in ("key", "token", "secret", "password", "auth")) for key in parse_qs(parsed.query)):
+        raise ValueError("base_url_sensitive_query")
+    if parsed.query:
+        raise ValueError("base_url_query_not_allowed")
+    return url
+
+
+def validate_outbound_base_url(value: str, *, allow_local: bool = False) -> str:
+    """Reject obvious local and metadata targets for cloud gateway settings."""
+    url = validate_base_url(value)
+    hostname = (urlsplit(url).hostname or "").lower().rstrip(".")
+    if allow_local:
+        return url
+    if hostname in {"localhost", "localhost.localdomain", "metadata.google.internal"} or hostname.endswith(".local"):
+        raise ValueError("base_url_private_host")
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        address = None
+    if address is not None and (address.is_private or address.is_loopback or address.is_link_local or address.is_reserved):
+        raise ValueError("base_url_private_host")
+    return url
+
+
 @dataclass(frozen=True)
 class Settings:
     """Runtime configuration for the selected OpenAI-compatible gateway.
@@ -142,6 +176,10 @@ class Settings:
             base_url = str(preset.get("base_url", ""))
             if provider == "aliyun" and not base_url:
                 base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        try:
+            base_url = validate_base_url(base_url)
+        except ValueError:
+            base_url = ""
         key_env = {
             "aliyun": ("DASHSCOPE_API_KEY", "DEEPSEEK_API_KEY"),
             "qwen": ("QWEN_API_KEY", "DASHSCOPE_API_KEY"),
@@ -184,6 +222,7 @@ class Settings:
             url = f"https://{workspace_id}.{_region_host(str(payload.get('region', base.region) or base.region))}.maas.aliyuncs.com/compatible-mode/v1"
         elif provider == "aliyun" and not url:
             url = cls().base_url
+        url = validate_outbound_base_url(url, allow_local=provider in LOCAL_PROVIDER_IDS)
         key = payload.get("api_key")
         # Empty or masked keys retain the current server-side secret.
         if (provider in LOCAL_PROVIDER_IDS or provider != base.provider) and key in (None, "", "***", "[configured]"):

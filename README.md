@@ -29,14 +29,7 @@ python3 server.py --offline
 
 ## 本地登录
 
-首次启动会自动创建本地管理员账号：
-
-```text
-用户名：admin
-密码：huitong-demo
-```
-
-生产环境请在启动前设置 `HUITONG_ADMIN_PASSWORD`。密码使用 PBKDF2-SHA256 保存，登录会话使用 HttpOnly cookie，并写入 `data/auth_sessions.json`；用户文件和会话文件均以 `0600` 权限保存。后台入口只对 `admin` 角色开放。
+首次启动前必须设置 `HUITONG_ADMIN_PASSWORD`，服务端不会再创建固定或可猜测的默认管理员密码。账号名为 `admin`。密码使用 PBKDF2-SHA256 保存，登录会话使用 HttpOnly cookie，并写入 `data/auth_sessions.json`；用户文件和会话文件均以 `0600` 权限保存。后台入口只对 `admin` 角色开放。
 
 当前登录接口：
 

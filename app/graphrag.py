@@ -247,6 +247,7 @@ class GraphContextStore:
                 "event_type": event_type,
                 "stage": event.get("stage"),
                 "actor_id": event.get("actor_id"),
+                "visibility": event.get("visibility", "room"),
                 "seq": event.get("seq"),
             },
             updated_at=event.get("created_at"),
@@ -263,7 +264,12 @@ class GraphContextStore:
                 node_type=object_type,
                 label=object_key.split(":", 1)[-1],
                 text=object_text,
-                metadata={"event_id": event_id, "status": payload.get("status")},
+                metadata={
+                    "event_id": event_id,
+                    "status": payload.get("status"),
+                    "visibility": event.get("visibility", "room"),
+                    "actor_id": event.get("actor_id"),
+                },
                 updated_at=event.get("created_at"),
             )
             self.add_edge(event_node, object_key, "records", room_id=room_id)
@@ -368,11 +374,26 @@ class GraphContextStore:
             score += 0.45
         return round(score, 6)
 
-    def retrieve(self, query: str, *, room_id: str, limit: int = 8, hops: int = 1) -> dict[str, Any]:
+    def retrieve(
+        self,
+        query: str,
+        *,
+        room_id: str,
+        limit: int = 8,
+        hops: int = 1,
+        actor_id: str | None = None,
+        admin: bool = False,
+    ) -> dict[str, Any]:
         query = self._validate_text(query, "query", 4000)
         limit = max(1, min(int(limit), 20))
         hops = max(0, min(int(hops), 2))
         nodes = self._load_nodes(room_id)
+        if not admin:
+            nodes = [
+                node for node in nodes
+                if node.metadata.get("visibility", "room") == "room"
+                or node.metadata.get("actor_id") == actor_id
+            ]
         edges = self._load_edges(room_id)
         query_tokens = _tokens(query)
         scored = [(self._score(query, query_tokens, node), node) for node in nodes]

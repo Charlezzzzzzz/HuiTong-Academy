@@ -11,15 +11,22 @@ const state = {
   clearKey: false,
   session: null,
   participantToken: null,
+  agentSettings: null,
+  agentSettingsBusy: false,
+  agentSettingsDirty: false,
   modalTrigger: null,
   seatName: '',
+  dockView: '厅堂',
 };
+
+const ROOM_STORAGE_KEY = 'huitong.room-context.v1';
+window.huitongRoomContext = null;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 
 function setAuthStatus(message, kind = '') { const el = $('#auth-status'); if (el) { el.textContent = message; el.className = `auth-status${kind ? ` ${kind}` : ''}`; } }
 function syncModalState() {
-  const open = ['#settings-panel', '#admin-panel'].some((selector) => {
+  const open = ['#settings-panel', '#admin-panel', '#agent-settings-panel'].some((selector) => {
     const node = $(selector);
     return node && !node.hidden;
   });
@@ -42,7 +49,7 @@ function modalFocusable(panel) {
     .filter((node) => !node.hidden && node.offsetParent !== null);
 }
 function trapModalFocus(event) {
-  const panel = ['#settings-panel', '#admin-panel']
+  const panel = ['#settings-panel', '#admin-panel', '#agent-settings-panel']
     .map((selector) => $(selector))
     .find((node) => node && !node.hidden);
   if (!panel) return;
@@ -67,6 +74,7 @@ function showAuth() {
   const gate = $('#auth-gate'); if (!gate) return;
   closeAdmin();
   closeSettings();
+  closeAgentSettings(false);
   const adminNav = $('#admin-nav');
   if (adminNav) adminNav.remove();
   if (state.poll) window.clearInterval(state.poll);
@@ -75,9 +83,19 @@ function showAuth() {
   state.seatName = '';
   state.participantToken = null;
   state.participant = null;
+  state.agentSettings = null;
+  state.agentSettingsDirty = false;
+  state.dockView = '厅堂';
+  const settingsButton = $('#agent-settings-open');
+  if (settingsButton) settingsButton.hidden = true;
+  publishRoomContext();
   document.body.classList.remove('workspace-ready');
   renderTaskCard();
   gate.hidden = false; $('#app-shell').style.display = 'none';
+  gate.classList.remove('login-open');
+  const authCard = $('#auth-card'); if (authCard) authCard.hidden = true;
+  const landingEnter = $('#landing-enter');
+  if (landingEnter) landingEnter.setAttribute('aria-expanded', 'false');
   $('#auth-title').textContent = '登录会通书院工作区';
   $('#auth-subtitle').textContent = '登录后进入会通书院厅堂、房间、模型设置和会录管理。';
   $('#auth-confirm-row').hidden = true; $('#auth-role-row').hidden = true;
@@ -110,6 +128,54 @@ function queueSceneEntrance() {
   const fire = () => window.dispatchEvent(new CustomEvent('huitong:enter'));
   if (window.huitongSceneReady) fire();
   else window.addEventListener('huitong:scene-ready', fire, { once: true });
+}
+
+function publishRoomContext() {
+  const context = state.room && state.participantToken
+    ? {
+        room: state.room,
+        participant: state.participant,
+        participantToken: state.participantToken,
+        seatName: state.seatName,
+        mode: state.mode,
+      }
+    : null;
+  window.huitongRoomContext = context;
+  try {
+    if (context) sessionStorage.setItem(ROOM_STORAGE_KEY, JSON.stringify(context));
+    else sessionStorage.removeItem(ROOM_STORAGE_KEY);
+  } catch {
+    // Session storage can be disabled.  The in-memory context remains valid.
+  }
+}
+
+function restoreRoomContext() {
+  let context = null;
+  try {
+    context = JSON.parse(sessionStorage.getItem(ROOM_STORAGE_KEY) || 'null');
+  } catch {
+    context = null;
+  }
+  if (!context?.room?.id || !context?.participantToken) return;
+  state.room = context.room;
+  state.participant = context.participant || null;
+  state.participantToken = context.participantToken;
+  state.seatName = context.seatName || '';
+  if (context.mode === 'learning' || context.mode === 'production') state.mode = context.mode;
+  window.huitongMode = state.mode;
+  publishRoomContext();
+  renderTaskCard();
+  refreshRoom();
+  const aiButton = $('#ai-research');
+  if (aiButton) aiButton.hidden = false;
+  const settingsButton = $('#agent-settings-open');
+  if (settingsButton) settingsButton.hidden = false;
+  if (state.poll) window.clearInterval(state.poll);
+  state.poll = window.setInterval(refreshRoom, 2500);
+  setDock('房间已恢复', [{
+    title: `${state.session?.username || '当前成员'} · ${state.seatName || '已入席'}`,
+    detail: '已恢复房间身份和会录入口。当前未恢复的进行中模型回合不会显示替代内容。',
+  }]);
 }
 async function enterWorkspace(account, options = {}) {
   state.session = account;
@@ -152,11 +218,40 @@ async function openAdmin(trigger = null) {
   } catch (error) { $('#admin-table').textContent = `读取后台数据失败：${error.message}`; }
 }
 async function initAuth() {
-  // Do not silently restore a browser cookie on a new page load.  The local
-  // session remains valid on the server, but the user must explicitly enter
-  // the workspace again.  This prevents an old browser cookie from appearing
-  // as an unauthenticated entry into the workbench.
-  showAuth();
+  let restored = null;
+  try {
+    const response = await fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' });
+    if (response.ok) {
+      const data = await response.json();
+      if (data?.user) restored = data.user;
+    }
+  } catch {
+    restored = null;
+  }
+  if (restored) {
+    await enterWorkspace(restored, { restored: true });
+    restoreRoomContext();
+  } else {
+    showAuth();
+  }
+  $('#landing-enter')?.addEventListener('click', () => {
+    const gate = $('#auth-gate');
+    const card = $('#auth-card');
+    if (!gate || !card) return;
+    gate.classList.add('login-open');
+    card.hidden = false;
+    $('#landing-enter').setAttribute('aria-expanded', 'true');
+    window.setTimeout(() => $('#auth-username')?.focus(), 0);
+  });
+  $('#auth-back')?.addEventListener('click', () => {
+    const gate = $('#auth-gate');
+    const card = $('#auth-card');
+    if (!gate || !card) return;
+    card.hidden = true;
+    gate.classList.remove('login-open');
+    $('#landing-enter')?.setAttribute('aria-expanded', 'false');
+    $('#landing-enter')?.focus();
+  });
   $('#auth-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const username = $('#auth-username').value.trim();
@@ -184,7 +279,19 @@ async function initAuth() {
       if (submit) submit.disabled = false;
     }
   });
-  $('#logout-button')?.addEventListener('click', async () => { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); state.session = null; state.room = null; state.participantToken = null; showAuth(); });
+  $('#logout-button')?.addEventListener('click', async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    } finally {
+      // Clear local identity and room context even when the network is down,
+      // so a failed logout request cannot leave the UI looking authenticated.
+      state.session = null;
+      state.room = null;
+      state.participantToken = null;
+      publishRoomContext();
+      showAuth();
+    }
+  });
   $('#admin-close')?.addEventListener('click', closeAdmin);
 }
 
@@ -214,6 +321,10 @@ function renderTaskCard() {
 }
 
 function setMode(mode) {
+  if (state.room) {
+    setDock('模式已锁定', [{ title: '房间已经建立', detail: '当前房间的学习/生产模式不能在会谈中切换。', warn: true }]);
+    return;
+  }
   state.mode = mode;
   window.huitongMode = mode;
   window.dispatchEvent(new CustomEvent('huitong:mode-change', { detail: { mode } }));
@@ -253,7 +364,7 @@ async function jsonFetch(url, options = {}) {
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
   const { timeoutMs: _timeoutMs, signal: externalSignal, ...fetchOptions } = options;
   const headers = { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) };
-  if (state.participantToken && url.includes('/api/rooms/')) headers['X-Participant-Token'] = state.participantToken;
+  if (state.participantToken && (url.includes('/api/rooms/') || url === '/api/research' || url.startsWith('/api/session/'))) headers['X-Participant-Token'] = state.participantToken;
   const response = await fetch(url, {
     ...fetchOptions,
     signal: externalSignal || controller.signal,
@@ -280,7 +391,64 @@ async function refreshRoom() {
     const stage = $('.stage-meta b');
     if (stage) stage.textContent = `房间 ${state.room.id.slice(0, 6)} · ${data.last_seq || 0} 条事件`;
   } catch (error) {
+    if (['participant_token_invalid', 'room_membership_denied', 'participant_not_in_room'].includes(error.message)) {
+      state.room = null;
+      state.participant = null;
+      state.participantToken = null;
+      state.seatName = '';
+      if (state.poll) window.clearInterval(state.poll);
+      state.poll = null;
+      publishRoomContext();
+      const aiButton = $('#ai-research');
+      if (aiButton) aiButton.hidden = true;
+      const settingsButton = $('#agent-settings-open');
+      if (settingsButton) settingsButton.hidden = true;
+      renderTaskCard();
+      setDock('需要重新入席', [{ title: '房间身份已失效', detail: '参与者令牌已过期或不再属于当前房间，请重新创建并入席。', warn: true }]);
+      return;
+    }
     setDock('连接异常', [{ title: '房间状态暂不可用', detail: error.message, warn: true }]);
+  }
+}
+
+function roomEventLabel(event) {
+  const payload = event?.payload || {};
+  const type = event?.type || 'room.event';
+  const role = payload.role_id || payload.agent_id || '';
+  const roleLabel = role ? ` · ${role}` : '';
+  if (type === 'material.submitted') return { title: '材料已提交', detail: String(payload.material || '已进入待核验材料区').slice(0, 180) };
+  if (type === 'agent.message' || type === 'agent.prompt') return { title: `${type === 'agent.prompt' ? '智能体提示' : '智能体发言'}${roleLabel}`, detail: String(payload.text || '').slice(0, 180) || '已记录智能体回应' };
+  if (type === 'user.message') return { title: `学习者回应${roleLabel}`, detail: String(payload.text || '').slice(0, 180) || '已记录学习者回应' };
+  if (type === 'research.completed') {
+    const result = payload.result || {};
+    return { title: `研究结果${roleLabel}`, detail: String(result.display_text || result.answer || result.summary || '已记录研究结果').slice(0, 180) };
+  }
+  if (type === 'agent.settings.saved') return { title: `回应偏好已启用 · v${payload.settings_version ?? 0}`, detail: `${role || '当前智能体'} · ${Array.isArray(payload.changed_fields) ? payload.changed_fields.join('、') : '设置已更新'}` };
+  if (type === 'session.failed' || type === 'research.failed') return { title: '生成失败', detail: String(payload.error || '服务端未返回替代内容').slice(0, 180), warn: true };
+  return { title: type, detail: payload.stage || event?.stage || '已写入房间会录' };
+}
+
+async function loadRoomEventsDock(view = state.dockView) {
+  state.dockView = view;
+  const heading = view === '会录' ? '会录回放' : '证据账本';
+  if (!state.room?.id) {
+    setDock(heading, [{ title: '当前没有房间', detail: '创建房间并入席后，这里会显示当前房间事件。' }], { title: heading, copy: '当前没有可展示的房间事件。' });
+    return;
+  }
+  setDock(heading, [{ title: '正在读取房间事件……', detail: '仅显示当前登录成员有权查看的事件。' }]);
+  try {
+    const data = await jsonFetch(`/api/rooms/${encodeURIComponent(state.room.id)}/events?after_seq=0`);
+    const events = Array.isArray(data.events) ? data.events : [];
+    const filtered = view === '会录'
+      ? events
+      : events.filter((event) => ['material.submitted', 'evidence_link.added', 'claim.created', 'research.completed', 'research.failed', 'agent.settings.saved'].includes(event.type));
+    const items = filtered.slice(-6).reverse().map(roomEventLabel);
+    setDock(heading, items.length ? items : [{ title: '当前没有相关事件', detail: '完成材料提交、研究或会谈后，这里会显示可核验记录。' }], {
+      title: heading,
+      copy: view === '会录' ? `当前房间共 ${events.length} 条可见事件，按时间倒序显示。` : '只把当前房间已写入的材料、证据关系和研究事件显示为待核验记录。',
+    });
+  } catch (error) {
+    setDock(view === '会录' ? '会录读取失败' : '证据读取失败', [{ title: '无法读取当前房间事件', detail: error.message, warn: true }, { title: '重试', detail: '再次点击侧栏中的会录或证据即可重试。' }], { title: '暂不可用', copy: '服务端事件接口暂时不可用。' });
   }
 }
 
@@ -311,16 +479,17 @@ async function createRoom() {
         task_id: selectedTopic === 'custom' ? 'custom' : selectedTopic,
       }),
     });
-    state.room = data.room;
-    const joined = await jsonFetch(`/api/rooms/${state.room.id}/join`, {
+    const room = data.room;
+    const joined = await jsonFetch(`/api/rooms/${room.id}/join`, {
       method: 'POST',
       body: JSON.stringify({ seat_id: seatId, display_name: state.session?.username || '我', kind: 'human' }),
     });
+    state.room = room;
     state.participant = joined.participant;
     state.participantToken = joined.participant_token || null;
     state.seatName = seatSelect?.selectedOptions?.[0]?.textContent?.split(' · ')[0] || `席位 ${seatId + 1}`;
     if (material?.value.trim()) {
-      await jsonFetch(`/api/rooms/${state.room.id}/events`, {
+      await jsonFetch(`/api/rooms/${room.id}/events`, {
         method: 'POST',
         body: JSON.stringify({
           event_type: 'material.submitted',
@@ -329,6 +498,7 @@ async function createRoom() {
         }),
       });
     }
+    publishRoomContext();
     setDock('房间成员与证据', [{ title: `${state.session?.username || '我'} · ${state.seatName}`, detail: `${state.room.mode === 'learning' ? '学习模式' : '生产模式'} 已启动` }, { title: '证据状态', detail: '等待本轮材料与出处进入账本' }]);
     const meta = $('.stage-meta b');
     if (meta) meta.textContent = `房间 ${state.room.id.slice(0, 6)} · 主持席已入席`;
@@ -336,8 +506,20 @@ async function createRoom() {
     state.poll = window.setInterval(refreshRoom, 2500);
     const aiButton = $('#ai-research');
     if (aiButton) aiButton.hidden = false;
+    const settingsButton = $('#agent-settings-open');
+    if (settingsButton) settingsButton.hidden = false;
+    loadRoomEventsDock(state.dockView).catch(() => {});
     renderTaskCard();
   } catch (error) {
+    // A room may already exist server-side when joining or material logging
+    // fails.  Clear the local context so the UI never presents a partial room
+    // as an established workspace.  The server-side room remains auditable.
+    state.room = null;
+    state.participant = null;
+    state.participantToken = null;
+    state.seatName = '';
+    publishRoomContext();
+    renderTaskCard();
     setDock('房间创建失败', [{ title: '请检查本地服务', detail: error.message, warn: true }]);
   } finally {
     if (button) button.disabled = Boolean(state.room);
@@ -347,7 +529,15 @@ async function createRoom() {
 function researchText(result) {
   if (typeof result === 'string') return result;
   if (!result || typeof result !== 'object') return String(result || '');
+  if (typeof result.display_text === 'string') return result.display_text;
   return result.answer || result.summary || result.conclusion || JSON.stringify(result);
+}
+
+async function hasValidResearchHash(result, provenance) {
+  if (!window.crypto?.subtle || !window.TextEncoder) return false;
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(researchText(result)));
+  const actual = Array.from(new Uint8Array(bytes), (value) => value.toString(16).padStart(2, '0')).join('');
+  return actual.toLowerCase() === String(provenance?.output_hash || '').toLowerCase();
 }
 
 async function runTeamResearch() {
@@ -371,7 +561,7 @@ async function runTeamResearch() {
     ['editor', '最终编辑'],
   ];
   const results = [];
-  setDock('七席 AI 生成中', [{ title: '正在调用真实模型', detail: '会通服务端会按席位记录每次研究调用。' }]);
+  setDock('七席实时生成中', [{ title: '正在请求服务端实时模型', detail: '只有带有服务端 provenance 的结果才会展示。' }]);
   for (const [agentId, label] of agents) {
     try {
       const data = await jsonFetch('/api/research', {
@@ -384,7 +574,21 @@ async function runTeamResearch() {
           context: material || `当前为${state.mode === 'learning' ? '学习模式' : '生产模式'}，用户作为论证链中的一环参与。请明确事实、推测与待核验问题。`,
         }),
       });
-      results.push({ title: `${label} · ${agentId}`, detail: researchText(data.result).slice(0, 420) });
+      const provenance = data.result?.provenance;
+      const valid = provenance?.source === 'live_api' && provenance?.ai_generated === true &&
+        provenance.room_id === state.room.id && provenance.agent_id === agentId &&
+        provenance.session_id === `research:${provenance.event_id}` &&
+        typeof provenance.provider === 'string' && provenance.provider.length > 0 &&
+        typeof provenance.model === 'string' && provenance.model.length > 0 &&
+        typeof provenance.server_request_id === 'string' && provenance.server_request_id.length > 0 &&
+        typeof provenance.message_id === 'string' && provenance.message_id.length > 0 &&
+        typeof provenance.event_id === 'string' && provenance.event_id.length > 0 &&
+        Number.isInteger(Number(provenance.settings_version)) && Number(provenance.settings_version) >= 0 &&
+        /^[0-9a-f]{64}$/i.test(String(provenance.settings_hash || '')) &&
+        /^[0-9a-f]{64}$/i.test(String(provenance.output_hash || '')) &&
+        await hasValidResearchHash(data.result, provenance);
+      if (!valid) throw new Error('实时模型来源未通过服务端校验');
+      results.push({ title: `${label} · 已核验实时结果`, detail: researchText(data.result).slice(0, 420) });
       setDock('七席 AI 结果', results);
     } catch (error) {
       results.push({ title: `${label} · 调用失败`, detail: error.message, warn: true });
@@ -500,7 +704,7 @@ async function loadSettings() {
   if (baseUrl) baseUrl.value = current.base_url || '';
   if (workspace) workspace.value = current.workspace_id || '';
   if (region) region.value = current.region || 'cn-beijing';
-  settingsStatus(current.api_key_configured ? `当前 Key：${current.api_key_masked}` : '尚未配置 API Key');
+  settingsStatus(current.api_key_configured ? '已配置 API Key（仅服务端可见）' : '尚未配置 API Key');
 }
 
 function openSettings(trigger = null) {
@@ -521,6 +725,186 @@ function closeSettings(restoreFocus = true) {
   syncModalState();
   if (restoreFocus && state.modalTrigger?.isConnected) state.modalTrigger.focus();
   if (restoreFocus) state.modalTrigger = null;
+}
+
+function agentSettingsElements() {
+  const panel = $('#agent-settings-panel');
+  return {
+    panel,
+    close: $('#agent-settings-close'),
+    role: $('#agent-settings-role'),
+    scope: $('#agent-settings-scope'),
+    version: $('#agent-settings-version'),
+    rollback: $('#agent-settings-rollback'),
+    status: $('#agent-settings-status'),
+  };
+}
+
+function agentSettingsStatus(message, kind = '') {
+  const { status } = agentSettingsElements();
+  if (!status) return;
+  status.textContent = message;
+  status.className = `settings-status${kind ? ` ${kind}` : ''}`;
+}
+
+function agentSettingsAgentId() {
+  const seat = Number(state.participant?.seat_id);
+  return roles().find((role) => role.seat === seat)?.id || '';
+}
+
+function agentSettingsPath(agentId = agentSettingsAgentId()) {
+  return state.room?.id && agentId
+    ? `/api/rooms/${encodeURIComponent(state.room.id)}/agent-settings/${encodeURIComponent(agentId)}`
+    : '';
+}
+
+function applyAgentSettings(settings = {}) {
+  document.querySelectorAll('[data-agent-setting]').forEach((control) => {
+    const field = control.dataset.agentSetting;
+    const value = settings[field];
+    if (value == null) return;
+    if (control.type === 'checkbox') control.checked = Boolean(value);
+    else control.value = String(value);
+    const output = document.querySelector(`[data-agent-output="${field}"]`);
+    if (output) output.textContent = String(value);
+  });
+  state.agentSettingsDirty = false;
+}
+
+function collectAgentSettings() {
+  const changes = {};
+  document.querySelectorAll('[data-agent-setting]').forEach((control) => {
+    const field = control.dataset.agentSetting;
+    changes[field] = control.type === 'checkbox' ? control.checked : (control.type === 'range' ? Number(control.value) : control.value);
+  });
+  return changes;
+}
+
+function renderAgentSettings(data) {
+  const settings = data?.settings || {};
+  state.agentSettings = data;
+  applyAgentSettings(settings.current || {});
+  const { role, scope, version, rollback } = agentSettingsElements();
+  if (role) {
+    role.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = `${data.role?.name || '当前智能体'} · ${data.role?.title || '回应偏好'}`;
+    const detail = document.createElement('span');
+    detail.textContent = data.role?.mission || data.role?.duty || '';
+    role.append(strong, detail);
+  }
+  if (scope) scope.textContent = `作用范围 · ${data.scope?.room_id || '当前房间'} · ${data.scope?.agent_id || agentSettingsAgentId()}`;
+  if (version) version.textContent = `当前版本 v${data.current_version || 0} · 设置哈希 ${String(data.current_hash || '').slice(0, 12)}… · ${state.agentSettingsDirty ? '有未保存更改' : '新设置只作用于下一次生成'}`;
+  if (rollback) {
+    rollback.innerHTML = '<option value="">选择已有版本</option>';
+    (data.versions || []).filter((item) => item.status !== 'active').reverse().forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.settings_version;
+      option.textContent = `v${item.settings_version} · ${item.reason || '保存'} · ${new Date((item.created_at || 0) * 1000).toLocaleString()}`;
+      rollback.appendChild(option);
+    });
+  }
+}
+
+async function loadAgentSettings() {
+  const path = agentSettingsPath();
+  if (!path) throw new Error('请先创建并加入房间');
+  const data = await jsonFetch(path);
+  renderAgentSettings(data.settings);
+}
+
+function openAgentSettings(trigger = null) {
+  if (!state.room?.id || !state.participantToken) {
+    setDock('回应偏好', [{ title: '尚未入席', detail: '创建房间并选择席位后才能调整当前智能体的回应偏好。', warn: true }]);
+    return;
+  }
+  closeSettings(false);
+  state.modalTrigger = trigger || document.activeElement;
+  const { panel } = agentSettingsElements();
+  if (!panel) return;
+  panel.hidden = false;
+  syncModalState();
+  focusModal(panel);
+  agentSettingsStatus('正在读取当前席位设置……');
+  loadAgentSettings().then(() => agentSettingsStatus('已加载当前版本。')).catch((error) => agentSettingsStatus(`读取失败：${error.message}`, 'error'));
+}
+
+function closeAgentSettings(restoreFocus = true) {
+  if (restoreFocus && state.agentSettingsDirty && !window.confirm('当前回应偏好有未保存更改，仍要关闭吗？')) return;
+  const { panel } = agentSettingsElements();
+  if (panel) panel.hidden = true;
+  syncModalState();
+  if (restoreFocus && state.modalTrigger?.isConnected) state.modalTrigger.focus();
+  if (restoreFocus) state.modalTrigger = null;
+}
+
+function agentSettingsRequestId() {
+  return window.crypto?.randomUUID ? window.crypto.randomUUID() : `agent-settings-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function previewAgentSettings() {
+  const basePath = agentSettingsPath();
+  if (!basePath || !state.agentSettings) return;
+  const path = `${basePath}/preview`;
+  agentSettingsStatus('正在生成本地预览……');
+  try {
+    const data = await jsonFetch(path, { method: 'POST', body: JSON.stringify({ changes: collectAgentSettings() }) });
+    agentSettingsStatus(`预览完成。版本仍为 v${data.preview.settings_version}，尚未保存。`, 'ok');
+  } catch (error) {
+    agentSettingsStatus(`预览失败：${error.message}`, 'error');
+  }
+}
+
+async function saveAgentSettings() {
+  const button = $('#agent-settings-save');
+  if (button) button.disabled = true;
+  const currentVersion = Number(state.agentSettings?.current_version || 0);
+  agentSettingsStatus('正在保存并启用……');
+  try {
+    const data = await jsonFetch(agentSettingsPath(), {
+      method: 'POST',
+      body: JSON.stringify({ changes: collectAgentSettings(), expected_version: currentVersion, idempotency_key: agentSettingsRequestId() }),
+    });
+    renderAgentSettings(data.settings);
+    agentSettingsStatus(`已启用 v${data.settings.current_version}。下一次生成会使用这一版本。`, 'ok');
+  } catch (error) {
+    agentSettingsStatus(error.message === 'agent_settings_version_conflict' ? '版本冲突。已重新读取当前设置，请确认后再次保存。' : `保存失败：${error.message}`, 'error');
+    if (error.message === 'agent_settings_version_conflict') loadAgentSettings().catch(() => {});
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function resetAgentSettings() {
+  if (!state.agentSettings) return;
+  if (!window.confirm('将当前席位的回应偏好重置为默认值，并生成一个新版本。继续吗？')) return;
+  const button = $('#agent-settings-reset');
+  if (button) button.disabled = true;
+  try {
+    const data = await jsonFetch(`${agentSettingsPath()}/reset`, { method: 'POST', body: JSON.stringify({ expected_version: Number(state.agentSettings.current_version || 0), idempotency_key: agentSettingsRequestId() }) });
+    renderAgentSettings(data.settings);
+    agentSettingsStatus(`已重置为默认并启用 v${data.settings.current_version}。`, 'ok');
+  } catch (error) {
+    agentSettingsStatus(`重置失败：${error.message}`, 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function rollbackAgentSettings() {
+  const target = Number($('#agent-settings-rollback')?.value || 0);
+  if (!target || !state.agentSettings) return;
+  const button = $('#agent-settings-rollback-button');
+  if (button) button.disabled = true;
+  try {
+    const data = await jsonFetch(`${agentSettingsPath()}/rollback`, { method: 'POST', body: JSON.stringify({ target_version: target, expected_version: Number(state.agentSettings.current_version || 0), idempotency_key: agentSettingsRequestId() }) });
+    renderAgentSettings(data.settings);
+    agentSettingsStatus(`已从 v${target} 创建并启用新版本 v${data.settings.current_version}。`, 'ok');
+  } catch (error) {
+    agentSettingsStatus(`回滚失败：${error.message}`, 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 function settingsPayload() {
@@ -591,6 +975,27 @@ function initWorkspace() {
   const replay = $('.workspace-secondary');
   if (replay) replay.addEventListener('click', exportRoom);
   $('#ai-research')?.addEventListener('click', runTeamResearch);
+  $('#agent-settings-open')?.addEventListener('click', (event) => openAgentSettings(event.currentTarget));
+  $('#agent-settings-close')?.addEventListener('click', () => closeAgentSettings());
+  $('#agent-settings-cancel')?.addEventListener('click', () => closeAgentSettings());
+  $('#agent-settings-preview')?.addEventListener('click', previewAgentSettings);
+  $('#agent-settings-save')?.addEventListener('click', saveAgentSettings);
+  $('#agent-settings-reset')?.addEventListener('click', resetAgentSettings);
+  $('#agent-settings-rollback-button')?.addEventListener('click', rollbackAgentSettings);
+  document.querySelectorAll('[data-agent-setting][type="range"]').forEach((control) => {
+    control.addEventListener('input', () => {
+      const output = document.querySelector(`[data-agent-output="${control.dataset.agentSetting}"]`);
+      if (output) output.textContent = control.value;
+      state.agentSettingsDirty = true;
+      agentSettingsStatus('有未保存更改。预览或保存后才会作用于下一次生成。');
+    });
+  });
+  document.querySelectorAll('[data-agent-setting]:not([type="range"])').forEach((control) => {
+    control.addEventListener('change', () => {
+      state.agentSettingsDirty = true;
+      agentSettingsStatus('有未保存更改。预览或保存后才会作用于下一次生成。');
+    });
+  });
   const { provider, close } = settingsElements();
   if (provider) provider.addEventListener('change', () => fillModels(provider.value));
   if (close) close.addEventListener('click', closeSettings);
@@ -620,6 +1025,7 @@ function initWorkspace() {
       document.querySelectorAll('.app-nav button').forEach((item) => item.classList.remove('active'));
       button.classList.add('active');
       const label = button.textContent.trim();
+      state.dockView = label.includes('会录') ? '会录' : label.includes('证据') ? '证据' : '厅堂';
       if (label.includes('厅堂')) setDock('厅堂', [
         { title: state.room ? '当前会通房间' : '准备进入会通', detail: state.room ? '可以继续论证，或从三维场景选择席位。' : '选择模式、主题和席位后创建房间。' },
         { title: '七席协作', detail: '立论、澄清、问难、证据、异议与编辑会按阶段接续。' },
@@ -629,22 +1035,7 @@ function initWorkspace() {
         copy: '学习模式由你占据一个席位并直接回应。<br>生产模式由七席智能体协作整理材料。',
       });
       if (label.includes('设置')) openSettings(button);
-      if (label.includes('证据')) setDock('证据账本', [
-        { title: 'P02_S01 · 《学记》原文', detail: '材料包示例 · 待核对引文与出处' },
-        { title: 'P02_S02 · 注疏节选', detail: '支持关系示例 · 与主张逐条绑定' },
-        { title: 'P08_S01 · 历史边界', detail: '异议示例 · 等待席位回应' },
-      ], {
-        title: '证据处置示例',
-        copy: '来源进入会谈后，会按“支持、限制、待核验”分层记录。<br>共同记忆和席位记录均由后台维护。',
-      });
-      if (label.includes('会录')) setDock('会录回放', [
-        { title: '示例 01 · 材料导入', detail: '主持席确认问题边界，锁定 P02 与 P08 材料包。' },
-        { title: '示例 02 · 证据核验', detail: '证据席标记一条出处待核查，并保留限定条件。' },
-        { title: '示例 03 · 异议登记', detail: '异议席保留替代解释，等待最终编辑回应。' },
-      ], {
-        title: '会录阶段摘要',
-        copy: '材料导入 → 独立立论 → 概念澄清 → 问难核验 → 回应修订 → 异议登记 → 受约束编辑。',
-      });
+      if (label.includes('证据') || label.includes('会录')) loadRoomEventsDock(state.dockView);
     });
   });
   document.addEventListener('keydown', (event) => {
@@ -652,8 +1043,10 @@ function initWorkspace() {
     if (event.key !== 'Escape') return;
     const settings = $('#settings-panel');
     const admin = $('#admin-panel');
+    const agentSettings = $('#agent-settings-panel');
     if (settings && !settings.hidden) { closeSettings(); return; }
     if (admin && !admin.hidden) { closeAdmin(); return; }
+    if (agentSettings && !agentSettings.hidden) { closeAgentSettings(); return; }
   });
 }
 
