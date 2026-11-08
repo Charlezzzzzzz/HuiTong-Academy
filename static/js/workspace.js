@@ -14,6 +14,8 @@ const state = {
   agentSettings: null,
   agentSettingsBusy: false,
   agentSettingsDirty: false,
+  personalAgentProfile: null,
+  personalAgentMode: 'chat',
   modalTrigger: null,
   seatName: '',
   dockView: '厅堂',
@@ -26,7 +28,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 
 function setAuthStatus(message, kind = '') { const el = $('#auth-status'); if (el) { el.textContent = message; el.className = `auth-status${kind ? ` ${kind}` : ''}`; } }
 function syncModalState() {
-  const open = ['#settings-panel', '#admin-panel', '#agent-settings-panel'].some((selector) => {
+  const open = ['#settings-panel', '#admin-panel', '#agent-settings-panel', '#personal-agent-panel'].some((selector) => {
     const node = $(selector);
     return node && !node.hidden;
   });
@@ -49,7 +51,7 @@ function modalFocusable(panel) {
     .filter((node) => !node.hidden && node.offsetParent !== null);
 }
 function trapModalFocus(event) {
-  const panel = ['#settings-panel', '#admin-panel', '#agent-settings-panel']
+  const panel = ['#settings-panel', '#admin-panel', '#agent-settings-panel', '#personal-agent-panel']
     .map((selector) => $(selector))
     .find((node) => node && !node.hidden);
   if (!panel) return;
@@ -75,6 +77,7 @@ function showAuth() {
   closeAdmin();
   closeSettings();
   closeAgentSettings(false);
+  closePersonalAgent(false);
   const adminNav = $('#admin-nav');
   if (adminNav) adminNav.remove();
   if (state.poll) window.clearInterval(state.poll);
@@ -85,6 +88,7 @@ function showAuth() {
   state.participant = null;
   state.agentSettings = null;
   state.agentSettingsDirty = false;
+  state.personalAgentProfile = null;
   state.dockView = '厅堂';
   const settingsButton = $('#agent-settings-open');
   if (settingsButton) settingsButton.hidden = true;
@@ -838,6 +842,116 @@ function closeAgentSettings(restoreFocus = true) {
   if (restoreFocus) state.modalTrigger = null;
 }
 
+function personalAgentElements() {
+  return {
+    panel: $('#personal-agent-panel'),
+    name: $('#personal-agent-name'),
+    mission: $('#personal-agent-mission'),
+    scope: $('#personal-agent-scope'),
+    subtitle: $('#personal-agent-subtitle'),
+    task: $('#personal-agent-task'),
+    result: $('#personal-agent-preview-result'),
+    specialists: $('#personal-agent-specialists-grid'),
+  };
+}
+
+function renderPersonalAgentProfile(profile) {
+  state.personalAgentProfile = profile;
+  const { name, mission, scope, subtitle, specialists } = personalAgentElements();
+  if (name) name.textContent = profile?.name || '会通总师';
+  if (mission) mission.textContent = profile?.mission || '把目标拆成可执行的下一步。';
+  if (scope) scope.textContent = `个人身份 · ${profile?.memory_policy || '按权限读取项目上下文'}`;
+  if (subtitle) subtitle.textContent = profile?.working_style || '一个主智能体，背后连接七席专家团队。';
+  if (specialists) {
+    specialists.innerHTML = '';
+    (profile?.specialists || []).forEach((role) => {
+      const card = document.createElement('div');
+      card.className = 'personal-agent-specialist';
+      card.style.setProperty('--agent-color', `var(--seat-${role.seat})`);
+      const image = document.createElement('img');
+      image.src = role.avatar;
+      image.alt = `${role.name}，${role.title}头像`;
+      const text = document.createElement('div');
+      const strong = document.createElement('strong');
+      strong.textContent = role.name;
+      const small = document.createElement('small');
+      small.textContent = role.title;
+      text.append(strong, small);
+      card.append(image, text);
+      specialists.appendChild(card);
+    });
+  }
+}
+
+async function loadPersonalAgentProfile() {
+  const data = await jsonFetch('/api/personal-agent/profile');
+  renderPersonalAgentProfile(data.profile || {});
+}
+
+function personalAgentModeName() {
+  return ({ chat: '普通对话', research: '研究核验', debate: '论证辩论', draft: '受约束写作' })[state.personalAgentMode] || '普通对话';
+}
+
+function previewPersonalAgent() {
+  const { task, result } = personalAgentElements();
+  const text = task?.value.trim() || '';
+  if (!result) return;
+  if (!text) {
+    result.innerHTML = '<strong>还需要一个目标</strong><p>写下你想完成的事情，本地预览会把它整理成一个个人智能体任务卡。</p>';
+    task?.focus();
+    return;
+  }
+  result.innerHTML = '';
+  const title = document.createElement('strong');
+  title.textContent = `${personalAgentModeName()} · 本地任务预览`;
+  const body = document.createElement('p');
+  body.textContent = `目标：${text}\n\n下一步：明确交付物 → 补充材料与证据边界 → 决定是否带入七席会通。\n\n当前预览不会调用模型服务，也不会写入长期记忆。`;
+  result.append(title, body);
+}
+
+function bridgePersonalTaskToRoom() {
+  const { task } = personalAgentElements();
+  const text = task?.value.trim() || '';
+  if (!text) {
+    setDock('个人任务', [{ title: '还没有任务内容', detail: '先在“我的智能体”中写下要完成的事情。', warn: true }]);
+    return;
+  }
+  const material = $('#material-input');
+  if (material) material.value = text;
+  closePersonalAgent();
+  setDock(state.room ? '任务草稿已准备' : '任务已准备进入七席', [{ title: personalAgentModeName(), detail: state.room ? '任务已填入材料草稿，提交或调用七席前仍由你确认。' : '创建房间后，任务会进入材料入口。' }]);
+}
+
+function openPersonalAgent(trigger = null) {
+  closeSettings(false);
+  closeAdmin(false);
+  state.modalTrigger = trigger || document.activeElement;
+  const { panel, result } = personalAgentElements();
+  if (!panel) return;
+  panel.hidden = false;
+  syncModalState();
+  focusModal(panel);
+  if (result && !state.personalAgentProfile) result.innerHTML = '<strong>正在读取配置</strong><p>正在加载会通总师和七席能力层。</p>';
+  loadPersonalAgentProfile().catch((error) => {
+    if (result) {
+      result.innerHTML = '';
+      const title = document.createElement('strong');
+      title.textContent = '配置读取失败';
+      const message = document.createElement('p');
+      message.textContent = error.message;
+      result.append(title, message);
+    }
+  });
+}
+
+function closePersonalAgent(restoreFocus = true) {
+  const { panel } = personalAgentElements();
+  if (panel) panel.hidden = true;
+  syncModalState();
+  if (restoreFocus && state.modalTrigger?.isConnected) state.modalTrigger.focus();
+  if (restoreFocus) state.modalTrigger = null;
+}
+
 function agentSettingsRequestId() {
   return window.crypto?.randomUUID ? window.crypto.randomUUID() : `agent-settings-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -975,6 +1089,16 @@ function initWorkspace() {
   const replay = $('.workspace-secondary');
   if (replay) replay.addEventListener('click', exportRoom);
   $('#ai-research')?.addEventListener('click', runTeamResearch);
+  $('#personal-agent-close')?.addEventListener('click', () => closePersonalAgent());
+  $('#personal-agent-preview')?.addEventListener('click', previewPersonalAgent);
+  $('#personal-agent-room')?.addEventListener('click', bridgePersonalTaskToRoom);
+  document.querySelectorAll('[data-personal-mode]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.personalAgentMode = button.dataset.personalMode || 'chat';
+      document.querySelectorAll('[data-personal-mode]').forEach((item) => item.classList.toggle('active', item === button));
+      previewPersonalAgent();
+    });
+  });
   $('#agent-settings-open')?.addEventListener('click', (event) => openAgentSettings(event.currentTarget));
   $('#agent-settings-close')?.addEventListener('click', () => closeAgentSettings());
   $('#agent-settings-cancel')?.addEventListener('click', () => closeAgentSettings());
@@ -1025,6 +1149,10 @@ function initWorkspace() {
       document.querySelectorAll('.app-nav button').forEach((item) => item.classList.remove('active'));
       button.classList.add('active');
       const label = button.textContent.trim();
+      if (label.includes('我的智能体')) {
+        openPersonalAgent(button);
+        return;
+      }
       state.dockView = label.includes('会录') ? '会录' : label.includes('证据') ? '证据' : '厅堂';
       if (label.includes('厅堂')) setDock('厅堂', [
         { title: state.room ? '当前会通房间' : '准备进入会通', detail: state.room ? '可以继续论证，或从三维场景选择席位。' : '选择模式、主题和席位后创建房间。' },
@@ -1044,9 +1172,11 @@ function initWorkspace() {
     const settings = $('#settings-panel');
     const admin = $('#admin-panel');
     const agentSettings = $('#agent-settings-panel');
+    const personalAgent = $('#personal-agent-panel');
     if (settings && !settings.hidden) { closeSettings(); return; }
     if (admin && !admin.hidden) { closeAdmin(); return; }
     if (agentSettings && !agentSettings.hidden) { closeAgentSettings(); return; }
+    if (personalAgent && !personalAgent.hidden) { closePersonalAgent(); return; }
   });
 }
 

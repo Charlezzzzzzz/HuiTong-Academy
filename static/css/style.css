@@ -1065,8 +1065,9 @@ body.modal-open #scene,
 body.modal-open #app-shell{pointer-events:none}
 body.modal-open #settings-panel,
 body.modal-open #admin-panel,
-body.modal-open #agent-settings-panel{pointer-events:auto}
-#settings-panel[hidden],#admin-panel[hidden],#agent-settings-panel[hidden]{display:none}
+body.modal-open #agent-settings-panel,
+body.modal-open #personal-agent-panel{pointer-events:auto}
+#settings-panel[hidden],#admin-panel[hidden],#agent-settings-panel[hidden],#personal-agent-panel[hidden]{display:none}
 
 .settings-panel,.admin-panel{
   --panel-pad:28px;
@@ -1176,6 +1177,35 @@ body.modal-open #agent-settings-panel{pointer-events:auto}
 .settings-panel input[type="range"]{min-height:28px;padding:0;accent-color:var(--seal)}
 .settings-panel output{color:var(--ink);font-variant-numeric:tabular-nums;font-size:13px}
 .settings-version{padding:10px 12px;border:1px dashed var(--ui-border-strong);border-radius:10px;color:var(--ink-3);font-size:13px;line-height:1.6}
+
+.personal-agent-panel{width:min(820px,calc(100vw - 32px));max-height:min(88vh,820px)}
+.personal-agent-kicker{color:var(--seal);font-family:var(--ui-font);font-size:11px;letter-spacing:.16em;font-weight:700}
+.personal-agent-head h2{margin:4px 0 3px!important}
+.personal-agent-head p{margin:0 0 12px;color:var(--ink-4);font-family:var(--ui-font);font-size:13px}
+.personal-agent-hero{display:flex;align-items:center;gap:14px;padding:15px;border:1px solid var(--ui-border);border-radius:14px;background:rgba(220,203,159,.30)}
+.personal-agent-avatar{width:64px;height:64px;flex:0 0 64px;border-radius:50%;padding:3px;background:var(--paper-4);border:2px solid var(--seal)}
+.personal-agent-avatar img{width:100%;height:100%;display:block;border-radius:50%;object-fit:cover}
+.personal-agent-hero div:last-child{display:grid;gap:2px}
+.personal-agent-hero strong{color:var(--ink);font-family:var(--font-brush);font-size:27px;font-weight:400}
+.personal-agent-hero span{color:var(--ink-2);font-size:14px;line-height:1.6}
+.personal-agent-hero small{color:var(--ink-4);font-family:var(--ui-font);font-size:12px}
+.personal-agent-modes{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 12px}
+.personal-agent-modes button{padding:8px 13px;border:1px solid var(--ui-border-strong);border-radius:999px;color:var(--ink-3);font-family:var(--ui-font);font-size:13px}
+.personal-agent-modes button.active{border-color:var(--seal);background:var(--seal-wash);color:var(--seal)}
+.personal-agent-input-label{margin-top:8px!important}
+.personal-agent-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:12px}
+.personal-agent-result{min-height:104px;margin-top:16px;padding:14px;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,251,239,.64);color:var(--ink-3);font-family:var(--ui-font);font-size:14px;line-height:1.7}
+.personal-agent-result strong{display:block;margin-bottom:4px;color:var(--ink);font-family:var(--font-brush);font-size:20px;font-weight:400}
+.personal-agent-result p{margin:0;white-space:pre-wrap}
+.personal-agent-specialists{margin-top:18px}
+.personal-agent-section-title{margin-bottom:8px;color:var(--ink-3);font-family:var(--ui-font);font-size:13px;font-weight:700;letter-spacing:.06em}
+.personal-agent-specialists-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.personal-agent-specialist{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--ui-border);border-left:3px solid var(--agent-color);border-radius:10px;background:rgba(247,239,220,.66)}
+.personal-agent-specialist img{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:cover}
+.personal-agent-specialist strong,.personal-agent-specialist small{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.personal-agent-specialist strong{color:var(--ink);font-family:var(--font-brush);font-size:17px;font-weight:400;line-height:1.25}
+.personal-agent-specialist small{color:var(--ink-4);font-family:var(--ui-font);font-size:10px;line-height:1.35}
+.personal-agent-boundary{margin:16px 0 0;color:var(--ink-4);font-family:var(--ui-font);font-size:12px;line-height:1.7}
 
 .admin-panel{width:min(680px,calc(100vw - 32px));max-height:80vh}
 .admin-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 16px}
@@ -1344,6 +1374,7 @@ body.modal-open #agent-settings-panel{pointer-events:auto}
   .task-card h2{font-size:26px}
   .task-card p{font-size:14px}
   .settings-panel,.admin-panel{--panel-pad:22px}
+  .personal-agent-panel{--panel-pad:22px}
   .auth-gate{padding:22px 16px}
   .auth-gate::before{inset:12px;border-radius:20px}
   .landing-home{display:block;min-height:auto;margin:0 auto 12px;padding:10px 6px 16px}
@@ -1376,6 +1407,8 @@ body.modal-open #agent-settings-panel{pointer-events:auto}
   .admin-row{grid-template-columns:1fr 1fr}
   .admin-row span:last-child{display:none}
   .auth-card{padding:24px}
+  .personal-agent-actions{display:grid;grid-template-columns:1fr}
+  .personal-agent-specialists-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .auth-gate.login-open .auth-card{top:12px;width:min(100% - 20px,420px);max-height:calc(100dvh - 24px);overflow:auto;transform:translateX(-50%)}
 }
 @media (prefers-reduced-motion:reduce){

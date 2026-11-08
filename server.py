@@ -46,6 +46,7 @@ from app.agent_preferences import (
 )
 from app.model_gateway import GatewayError, ModelGateway
 from app.memory_bridge import MemoryBridge
+from app.personal_agent import personal_agent_profile
 from app.protocol import Protocol
 from app.provenance import bind_live_provenance, content_hash, user_authored_provenance
 
@@ -978,6 +979,15 @@ class Handler(BaseHTTPRequestHandler):
         user, _member, _room_state = scope
         self._send_json(200, {"ok": True, "settings": _AGENT_PREFERENCES.public(user["username"], room_id, agent_id)})
 
+    def _get_personal_agent_profile(self) -> None:
+        """Return the server-owned personal-agent profile without user content."""
+        user = _require_auth(self)
+        if not user:
+            return
+        profile = personal_agent_profile()
+        profile["user_id"] = user["username"]
+        self._send_json(200, {"ok": True, "profile": profile})
+
     def _post_agent_preferences(self, room_id: str, agent_id: str, action: str | None) -> None:
         scope = _agent_settings_scope(self, room_id, agent_id)
         if not scope:
@@ -1096,6 +1106,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(401, {"ok": False, "error": "login_required"})
             else:
                 self._send_json(200, {"ok": True, "user": user})
+            return
+        if path == "/api/personal-agent/profile":
+            self._get_personal_agent_profile()
             return
         match = re.fullmatch(r"/api/rooms/([^/]+)/agent-settings/([A-Za-z0-9_-]+)", path)
         if match:

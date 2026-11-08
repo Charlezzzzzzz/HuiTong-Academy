@@ -55,6 +55,7 @@
     <aside class="app-sidebar">
       <div class="app-brand"><span class="app-brand-mark" aria-hidden="true"><svg class="ink-person-logo" viewBox="0 0 64 64" role="img" aria-label="会通书院水墨人物徽标"><circle class="logo-wash" cx="32" cy="17" r="8"></circle><path class="logo-line" d="M22 29c3-4 17-4 20 0M20 32c-4 6-5 14-3 22M44 32c4 6 5 14 3 22M20 54c6-4 18-4 24 0M26 31c-1 8-1 15 0 22M38 31c1 8 1 15 0 22"></path><path class="logo-brush" d="M13 25c7-5 12-9 19-8M51 25c-7-5-12-9-19-8"></path><circle class="logo-seal" cx="48" cy="48" r="3"></circle></svg></span><div><strong>会通书院</strong></div></div>
       <nav class="app-nav" aria-label="工作区导航">
+        <button type="button"><span>我的智能体</span></button>
         <button class="active" type="button"><span>厅堂</span></button>
         <button type="button"><span>会录</span></button>
         <button type="button"><span>证据</span></button>
@@ -72,6 +73,16 @@
       <div class="ledger-title">证据账本</div><div class="ledger-placeholder">本轮会谈的来源、引文与处置记录<br>将在这里汇总</div>
     </aside>
   </div>  <main id="hud" aria-live="polite"></main>
+  <section id="personal-agent-panel" class="settings-panel personal-agent-panel" hidden aria-labelledby="personal-agent-title" role="dialog" aria-modal="true">
+    <div class="settings-head personal-agent-head"><div><div class="personal-agent-kicker">PERSONAL MODE · 探索版</div><h2 id="personal-agent-title">我的会通智能体</h2><p id="personal-agent-subtitle">一个主智能体，背后连接七席专家团队。</p></div><button id="personal-agent-close" class="settings-close" type="button" aria-label="关闭我的智能体">×</button></div>
+    <div class="personal-agent-hero"><div class="personal-agent-avatar"><img src="./assets/avatars/seat-6.png" alt="会通总师头像"></div><div><strong id="personal-agent-name">会通总师</strong><span id="personal-agent-mission">正在读取个人智能体配置……</span><small id="personal-agent-scope">个人身份 · 项目上下文按权限读取</small></div></div>
+    <div class="personal-agent-modes" role="group" aria-label="任务模式"><button class="active" type="button" data-personal-mode="chat">普通对话</button><button type="button" data-personal-mode="research">研究核验</button><button type="button" data-personal-mode="debate">论证辩论</button><button type="button" data-personal-mode="draft">受约束写作</button></div>
+    <label class="personal-agent-input-label">告诉我你现在要完成什么<textarea id="personal-agent-task" rows="4" maxlength="2000" placeholder="例如：帮我把这周的课程论文任务拆成三个可执行步骤"></textarea></label>
+    <div class="personal-agent-actions"><button id="personal-agent-preview" class="settings-primary" type="button">生成本地任务预览</button><button id="personal-agent-room" class="settings-secondary" type="button">带入七席会通</button></div>
+    <div id="personal-agent-preview-result" class="personal-agent-result" role="status" aria-live="polite"><strong>本地探索预览</strong><p>这里先展示个人智能体的任务入口和协作边界，不会发送你的输入到模型服务商。</p></div>
+    <div class="personal-agent-specialists"><div class="personal-agent-section-title">七席能力层</div><div id="personal-agent-specialists-grid" class="personal-agent-specialists-grid"></div></div>
+    <p class="personal-agent-boundary">探索版默认只做本地任务预览。进入七席会通后，才会沿用现有 room、participant token、live API 和 provenance 约束。</p>
+  </section>
   <section id="admin-panel" class="admin-panel" hidden aria-label="管理员面板" role="dialog" aria-modal="true">
     <div class="admin-head"><div><h2>工作区管理</h2></div><button id="admin-close" class="settings-close" type="button">×</button></div>
     <div class="admin-summary" id="admin-summary"></div><div class="admin-table" id="admin-table"></div>
