@@ -19,6 +19,8 @@ const state = {
   modalTrigger: null,
   seatName: '',
   dockView: '厅堂',
+  dockRequestId: 0,
+  researchRunId: 0,
 };
 
 const ROOM_STORAGE_KEY = 'huitong.room-context.v1';
@@ -74,6 +76,7 @@ function trapModalFocus(event) {
 }
 function showAuth() {
   const gate = $('#auth-gate'); if (!gate) return;
+  window.dispatchEvent(new CustomEvent('huitong:auth-logout'));
   closeAdmin();
   closeSettings();
   closeAgentSettings(false);
@@ -90,6 +93,8 @@ function showAuth() {
   state.agentSettingsDirty = false;
   state.personalAgentProfile = null;
   state.dockView = '厅堂';
+  state.dockRequestId += 1;
+  state.researchRunId += 1;
   const settingsButton = $('#agent-settings-open');
   if (settingsButton) settingsButton.hidden = true;
   publishRoomContext();
@@ -104,6 +109,9 @@ function showAuth() {
   $('#auth-subtitle').textContent = '登录后进入会通书院厅堂、房间、模型设置和会录管理。';
   $('#auth-confirm-row').hidden = true; $('#auth-role-row').hidden = true;
   $('#auth-confirm').required = false; $('.auth-submit').textContent = '登录';
+  const password = $('#auth-password'); if (password) password.value = '';
+  const confirm = $('#auth-confirm'); if (confirm) confirm.value = '';
+  setAuthStatus('');
   const toggle = $('#auth-toggle'); if (toggle) { toggle.textContent = '本地管理员账号由服务端初始化'; toggle.hidden = true; }
 }
 function playSceneEntrance() {
@@ -118,12 +126,21 @@ function playSceneEntrance() {
       resolve();
     };
     const start = () => {
-      if (settled) return;
       window.removeEventListener('huitong:scene-ready', start);
+      if (!state.session) return;
+      if (settled) {
+        window.dispatchEvent(new CustomEvent('huitong:enter'));
+        return;
+      }
       window.addEventListener('huitong:entered', finish);
       window.dispatchEvent(new CustomEvent('huitong:enter'));
     };
-    const timer = window.setTimeout(finish, 5000);
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('huitong:entered', finish);
+      resolve();
+    }, 5000);
     if (window.huitongSceneReady) start();
     else window.addEventListener('huitong:scene-ready', start);
   });
@@ -166,7 +183,13 @@ function restoreRoomContext() {
   state.participantToken = context.participantToken;
   state.seatName = context.seatName || '';
   if (context.mode === 'learning' || context.mode === 'production') state.mode = context.mode;
+  const restoredSeat = Number(context.participant?.seat_id);
+  const seatPicker = $('#seat-select');
+  if (seatPicker && Number.isInteger(restoredSeat) && restoredSeat >= 0 && restoredSeat < seatPicker.options.length) {
+    seatPicker.value = String(restoredSeat);
+  }
   window.huitongMode = state.mode;
+  window.dispatchEvent(new CustomEvent('huitong:room-restored', { detail: { seat: restoredSeat } }));
   publishRoomContext();
   renderTaskCard();
   refreshRoom();
@@ -222,22 +245,19 @@ async function openAdmin(trigger = null) {
   } catch (error) { $('#admin-table').textContent = `读取后台数据失败：${error.message}`; }
 }
 async function initAuth() {
-  let restored = null;
-  try {
-    const response = await fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' });
-    if (response.ok) {
-      const data = await response.json();
-      if (data?.user) restored = data.user;
+  const restoredPromise = (async () => {
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        return data?.user || null;
+      }
+    } catch {
+      // The login controls are already available.  A failed session probe
+      // should leave the cover usable instead of delaying its first click.
     }
-  } catch {
-    restored = null;
-  }
-  if (restored) {
-    await enterWorkspace(restored, { restored: true });
-    restoreRoomContext();
-  } else {
-    showAuth();
-  }
+    return null;
+  })();
   $('#landing-enter')?.addEventListener('click', () => {
     const gate = $('#auth-gate');
     const card = $('#auth-card');
@@ -297,6 +317,13 @@ async function initAuth() {
     }
   });
   $('#admin-close')?.addEventListener('click', closeAdmin);
+  const restored = await restoredPromise;
+  if (restored) {
+    await enterWorkspace(restored, { restored: true });
+    restoreRoomContext();
+  } else {
+    showAuth();
+  }
 }
 
 function renderTaskCard() {
@@ -367,11 +394,15 @@ async function jsonFetch(url, options = {}) {
   const timeoutMs = Number(options.timeoutMs || 12000);
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
   const { timeoutMs: _timeoutMs, signal: externalSignal, ...fetchOptions } = options;
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
   const headers = { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) };
   if (state.participantToken && (url.includes('/api/rooms/') || url === '/api/research' || url.startsWith('/api/session/'))) headers['X-Participant-Token'] = state.participantToken;
   const response = await fetch(url, {
     ...fetchOptions,
-    signal: externalSignal || controller.signal,
+    signal: controller.signal,
     headers,
   }).finally(() => window.clearTimeout(timer));
   const data = await response.json().catch(() => ({}));
@@ -400,9 +431,11 @@ async function refreshRoom() {
       state.participant = null;
       state.participantToken = null;
       state.seatName = '';
+      state.researchRunId += 1;
       if (state.poll) window.clearInterval(state.poll);
       state.poll = null;
       publishRoomContext();
+      window.dispatchEvent(new CustomEvent('huitong:room-membership-expired'));
       const aiButton = $('#ai-research');
       if (aiButton) aiButton.hidden = true;
       const settingsButton = $('#agent-settings-open');
@@ -434,6 +467,7 @@ function roomEventLabel(event) {
 
 async function loadRoomEventsDock(view = state.dockView) {
   state.dockView = view;
+  const requestId = ++state.dockRequestId;
   const heading = view === '会录' ? '会录回放' : '证据账本';
   if (!state.room?.id) {
     setDock(heading, [{ title: '当前没有房间', detail: '创建房间并入席后，这里会显示当前房间事件。' }], { title: heading, copy: '当前没有可展示的房间事件。' });
@@ -447,11 +481,13 @@ async function loadRoomEventsDock(view = state.dockView) {
       ? events
       : events.filter((event) => ['material.submitted', 'evidence_link.added', 'claim.created', 'research.completed', 'research.failed', 'agent.settings.saved'].includes(event.type));
     const items = filtered.slice(-6).reverse().map(roomEventLabel);
+    if (requestId !== state.dockRequestId || view !== state.dockView) return;
     setDock(heading, items.length ? items : [{ title: '当前没有相关事件', detail: '完成材料提交、研究或会谈后，这里会显示可核验记录。' }], {
       title: heading,
       copy: view === '会录' ? `当前房间共 ${events.length} 条可见事件，按时间倒序显示。` : '只把当前房间已写入的材料、证据关系和研究事件显示为待核验记录。',
     });
   } catch (error) {
+    if (requestId !== state.dockRequestId || view !== state.dockView) return;
     setDock(view === '会录' ? '会录读取失败' : '证据读取失败', [{ title: '无法读取当前房间事件', detail: error.message, warn: true }, { title: '重试', detail: '再次点击侧栏中的会录或证据即可重试。' }], { title: '暂不可用', copy: '服务端事件接口暂时不可用。' });
   }
 }
@@ -548,6 +584,11 @@ async function runTeamResearch() {
   if (!state.room?.id || !state.participantToken) return;
   const button = $('#ai-research');
   if (button) button.disabled = true;
+  const runId = ++state.researchRunId;
+  const roomId = state.room.id;
+  const participantToken = state.participantToken;
+  const isCurrentRun = () => runId === state.researchRunId &&
+    state.room?.id === roomId && state.participantToken === participantToken;
   const topicSelect = $('#topic-select');
   const customTopic = $('#custom-topic');
   const material = $('#material-input')?.value.trim() || '';
@@ -567,6 +608,7 @@ async function runTeamResearch() {
   const results = [];
   setDock('七席实时生成中', [{ title: '正在请求服务端实时模型', detail: '只有带有服务端 provenance 的结果才会展示。' }]);
   for (const [agentId, label] of agents) {
+    if (!isCurrentRun()) break;
     try {
       const data = await jsonFetch('/api/research', {
         method: 'POST',
@@ -592,14 +634,16 @@ async function runTeamResearch() {
         /^[0-9a-f]{64}$/i.test(String(provenance.output_hash || '')) &&
         await hasValidResearchHash(data.result, provenance);
       if (!valid) throw new Error('实时模型来源未通过服务端校验');
+      if (!isCurrentRun()) break;
       results.push({ title: `${label} · 已核验实时结果`, detail: researchText(data.result).slice(0, 420) });
       setDock('七席 AI 结果', results);
     } catch (error) {
+      if (!isCurrentRun()) break;
       results.push({ title: `${label} · 调用失败`, detail: error.message, warn: true });
       setDock('七席 AI 结果', results);
     }
   }
-  if (button) button.disabled = false;
+  if (button && isCurrentRun()) button.disabled = false;
 }
 
 async function exportRoom() {
@@ -685,8 +729,14 @@ function fillModels(providerId, selected = '') {
 }
 
 function setProvider(providerId, modelId = '') {
-  const { provider } = settingsElements();
+  const { provider, apiKey, baseUrl } = settingsElements();
   if (!provider) return;
+  const changed = Boolean(provider.value && provider.value !== providerId);
+  if (changed) {
+    if (apiKey) apiKey.value = '';
+    if (baseUrl) baseUrl.value = '';
+    state.clearKey = false;
+  }
   provider.value = providerId;
   fillModels(providerId, modelId);
 }
@@ -909,7 +959,7 @@ function previewPersonalAgent() {
   result.append(title, body);
 }
 
-function bridgePersonalTaskToRoom() {
+async function bridgePersonalTaskToRoom() {
   const { task } = personalAgentElements();
   const text = task?.value.trim() || '';
   if (!text) {
@@ -918,8 +968,31 @@ function bridgePersonalTaskToRoom() {
   }
   const material = $('#material-input');
   if (material) material.value = text;
+  if (state.room?.id && state.participantToken) {
+    const button = $('#personal-agent-room');
+    if (button) button.disabled = true;
+    try {
+      await jsonFetch(`/api/rooms/${encodeURIComponent(state.room.id)}/events`, {
+        method: 'POST',
+        body: JSON.stringify({
+          event_type: 'material.submitted',
+          stage: 'intake',
+          payload: { material: text, mode: state.personalAgentMode, origin: 'personal_agent' },
+          idempotency_key: `personal-task:${agentSettingsRequestId()}`,
+        }),
+      });
+      closePersonalAgent();
+      setDock('任务已提交到七席', [{ title: personalAgentModeName(), detail: '个人任务已写入当前房间会录，后续由你确认并继续处理。' }]);
+      loadRoomEventsDock(state.dockView).catch(() => {});
+    } catch (error) {
+      setDock('任务提交失败', [{ title: '个人任务未写入会录', detail: error.message, warn: true }]);
+    } finally {
+      if (button) button.disabled = false;
+    }
+    return;
+  }
   closePersonalAgent();
-  setDock(state.room ? '任务草稿已准备' : '任务已准备进入七席', [{ title: personalAgentModeName(), detail: state.room ? '任务已填入材料草稿，提交或调用七席前仍由你确认。' : '创建房间后，任务会进入材料入口。' }]);
+  setDock('任务已准备进入七席', [{ title: personalAgentModeName(), detail: '创建房间后，任务会进入材料入口。' }]);
 }
 
 function openPersonalAgent(trigger = null) {
@@ -939,7 +1012,24 @@ function openPersonalAgent(trigger = null) {
       title.textContent = '配置读取失败';
       const message = document.createElement('p');
       message.textContent = error.message;
-      result.append(title, message);
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'settings-secondary';
+      retry.textContent = '重新读取配置';
+      retry.addEventListener('click', () => {
+        retry.disabled = true;
+        result.innerHTML = '<strong>正在读取配置</strong><p>正在加载会通总师和七席能力层。</p>';
+        loadPersonalAgentProfile().catch((retryError) => {
+          retry.disabled = false;
+          result.innerHTML = '';
+          const retryTitle = document.createElement('strong');
+          retryTitle.textContent = '配置读取失败';
+          const retryMessage = document.createElement('p');
+          retryMessage.textContent = retryError.message;
+          result.append(retryTitle, retryMessage, retry);
+        });
+      });
+      result.append(title, message, retry);
     }
   });
 }
@@ -1067,6 +1157,15 @@ async function saveSettings() {
 }
 
 function initWorkspace() {
+  window.addEventListener('huitong:auth-expired', () => {
+    state.session = null;
+    state.room = null;
+    state.participant = null;
+    state.participantToken = null;
+    state.seatName = '';
+    publishRoomContext();
+    showAuth();
+  }, { once: false });
   initAuth();
   window.huitongMode = state.mode;
   const topicSelect = $('#topic-select');

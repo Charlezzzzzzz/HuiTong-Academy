@@ -7,12 +7,13 @@
 - **学习模式**：多人占据席位，空席由功能智能体参与；有人席位的智能体只与该席位学习者协作；
 - **生产模式**：一个人调度多个功能智能体，适合复杂议题预研和课程演示；
 - **研究脚手架**：编辑阶段压力测试的 12 个冻结案例、72 条运行清单和案例层评分工具。
+- **Personal Agent 探索版**：首页提供“我的智能体”入口，以“会通总师”作为主智能体，连接七席专家能力层，支持普通对话、研究核验、论证辩论和受约束写作四种本地任务预览。
 - **前端模型设置**：可在“设置”中选择服务商、模型、Base URL、阿里云工作空间和 API Key，并进行一次连通性测试；Key 可以只保存在当前会话，也可以保存到本机 `0600` 配置文件。
 - **本地登录与后台**：登录后才能创建房间、入席和读取事件；管理员可以查看本地用户、房间和最近事件摘要。
 
 系统保留门、七席和水墨会场作为空间叙事；进入工作区时不再显示关闭的门，也不再有鲁班锁和口令环节，而是先用墨线在纸面上勾出门框与门扇，再让门出现并开启，墨晕过场后进入七席俯视。当前场景包含宋式木构门扇、带针脚层次的蒲团和简线身份人物。工作区交互已经收敛为单面板、现代中文和放大字号。论证文字和证据关系由 DOM 面板承载，场景重建说明见 `SCENE_REDESIGN.md`，交互说明见 `UI_INTERACTION_REDESIGN.md`。
 
-左上角人物徽标的构图与使用边界见 [LOGO.md](</Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/LOGO.md>)。
+左上角人物徽标的构图与使用边界见 [LOGO.md](LOGO.md)。Personal Agent 探索边界和后续路线见 [Personal-Agent探索说明_2026-11-09.md](Personal-Agent探索说明_2026-11-09.md)。
 
 面向学习者的角色对白、旁白、按钮和选择项统一使用现代白话文；史料原文只在带来源编号的引用内容中保留，不把整场对话写成文言文。
 
@@ -22,10 +23,10 @@
 
 ```bash
 cd huitong-web
-python3 server.py --offline
+python3 server.py --offline --port 8771
 ```
 
-浏览器打开 <http://127.0.0.1:8000>。本地受限环境若禁止监听端口，可直接运行单元测试和静态检查；正式部署需使用可绑定端口的主机或反向代理。
+浏览器打开 <http://127.0.0.1:8771>。端口可以按需替换为其他可用端口。本地受限环境若禁止监听端口，可直接运行单元测试和静态检查；正式部署需使用可绑定端口的主机或反向代理。
 
 ## 本地登录
 
@@ -115,6 +116,7 @@ huitong-web/
 | `GET` | `/api/settings/providers` | 读取服务商预设和当前配置的安全摘要 |
 | `POST` | `/api/settings` | 保存当前会话或本机持久化模型配置 |
 | `POST` | `/api/settings/test` | 使用提交的临时配置测试连接，不保存配置 |
+| `GET` | `/api/personal-agent/profile` | 登录后读取主智能体和七席专家能力层配置 |
 
 事件使用 `seq`、`actor_id`、`stage`、`visibility` 和 `idempotency_key` 记录责任与顺序。`claim.created`、`evidence_link.added`、`challenge.raised`、`revision.created`、`dissent.registered` 和 `edit_audit.recorded` 已有 `huitong-argument-v1` payload 校验；完整阶段门控和跨对象引用检查仍在后续工作中。房间主题、事件和论证对象同时写入本地 `local-graphrag-v1` 节点/关系索引，研究助手通过有限图扩展访问上下文。默认存储为启用 WAL 的 `SQLiteStore`，数据库位于 `data/huitong.sqlite3`；`MemoryStore` 仍用于测试和兼容性验证。
 
@@ -144,7 +146,7 @@ node --check static/js/workspace.js
 
 ## 交付与新会话接手
 
-完整交付说明见 [交付文档_2026-10-31.md](</Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/交付文档_2026-10-31.md>)，当前状态和后续任务见 [交接文档_当前状态与后续工作.md](</Users/charleslu/Documents/人工智能前沿/人工智能前沿工作区/huitong-web/交接文档_当前状态与后续工作.md>)。
+完整交付说明见 [交付文档_2026-10-31.md](交付文档_2026-10-31.md)，当前状态和后续任务见 [交接文档_当前状态与后续工作.md](交接文档_当前状态与后续工作.md)。
 
 可以使用安全打包脚本重新生成交付压缩包：
 

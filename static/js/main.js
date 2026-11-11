@@ -197,6 +197,10 @@ function fetchJSON(url, options = {}, timeoutMs = 8000) {
   });
 }
 
+function dispatchAuthExpired() {
+  window.dispatchEvent(new CustomEvent('huitong:auth-expired'));
+}
+
 function hasWebGL() {
   try {
     const canvas = document.createElement('canvas');
@@ -225,7 +229,7 @@ async function boot() {
     config = await response.json();
     if (!config || !config.ok) throw new Error('config');
   } catch {
-    showBootNote(ui().config_failed || '', true);
+    await setState(S.FALLBACK, { reason: 'config' }, true);
     markSceneReady(true);
     return;
   }
@@ -1570,6 +1574,13 @@ function enterGate(payload, token) {
   state.stageId = null;
   stopPolling();
   resetPanel();
+  for (const pivot of state.doorPivots || []) pivot.rotation.y = 0;
+  for (const leaf of state.doorLeaves || []) leaf.visible = false;
+  for (const part of state.doorFrame || []) part.visible = false;
+  for (const plane of state.couplets || []) plane.visible = false;
+  for (const group of state.cushions || []) if (group) group.visible = false;
+  for (const group of state.props || []) if (group) group.visible = false;
+  for (const ring of state.rings || []) if (ring) ring.visible = false;
   setCameraGate();
 }
 
@@ -1876,6 +1887,10 @@ async function handleStartClick() {
     state.starting = false;
     if (dom.startBtn) dom.startBtn.disabled = false;
     showToast(ui().error_generic);
+    return;
+  }
+  if (response.status === 401) {
+    dispatchAuthExpired();
     return;
   }
   let data = {};
@@ -2621,6 +2636,10 @@ async function submitTextReply() {
     setFootStatus(error.message === 'reply_too_long' ? '回应不能超过 4000 字。' : ui().error_generic, true, false);
     return;
   }
+  if (response.status === 401) {
+    dispatchAuthExpired();
+    return;
+  }
   state.replyInFlight = false;
   if (dom.textSubmit) dom.textSubmit.disabled = false;
   dom.textInput.disabled = false;
@@ -2680,6 +2699,10 @@ async function replyChip(chip, seq) {
     if (dom.textEntry) dom.textEntry.hidden = false;
     for (const button of buttons) button.disabled = false;
     setFootStatus(ui().error_generic, true, false);
+    return;
+  }
+  if (response.status === 401) {
+    dispatchAuthExpired();
     return;
   }
   state.replyInFlight = false;
@@ -2790,6 +2813,10 @@ async function pollLoop(token) {
       const keep = await pollBackoff(token);
       if (!keep) return;
       continue;
+    }
+    if (response.status === 401) {
+      dispatchAuthExpired();
+      return;
     }
     if (!state.polling || token !== state.pollEpoch || state.name !== S.PANEL) return;
     if (response.status === 204) {
@@ -3047,11 +3074,12 @@ function enterFallback(payload, token) {
   const root = el('div', 'fallback');
   const inner = el('div', 'fallback-inner');
   const title = el('h1', null, ui().fallback_title || ui().gate_title || document.title);
-  const lead = el('p', 'lead', ui().fallback_text || '');
+  const lead = el('p', 'lead', ui().fallback_text || (payload.reason === 'config' ? '服务配置暂时无法读取，请确认本地服务已启动后刷新页面。' : ''));
   const warn = el('p', 'warn');
   const feedback = el('p', 'warn');
   feedback.hidden = true;
   if (payload.reason === 'three') warn.textContent = ui().fallback_three || '';
+  else if (payload.reason === 'config') warn.textContent = '配置接口不可用，当前没有进入工作区。';
   else warn.textContent = '';
 
   const form = el('div', 'fallback-foot');
@@ -3609,6 +3637,48 @@ function updatePointer(clientX, clientY) {
     y: (0.5 - clientY / height) * 2,
   };
 }
+
+async function resetSceneForAuth() {
+  state.enterToken += 1;
+  state.entrancePlayed = false;
+  state.entering = false;
+  state.starting = false;
+  state.leaving = false;
+  state.seat = null;
+  state.session = null;
+  state.replyInFlight = false;
+  state.awaiting = false;
+  state.lastSeq = 0;
+  state.stageId = null;
+  stopPolling();
+  cleanupFigures(true);
+  resetPanel();
+  if (scene && camera) {
+    await setState(S.GATE, {}, true);
+  } else {
+    state.name = S.GATE;
+    document.body.dataset.state = S.GATE;
+  }
+}
+
+function resetSceneForRoomMembershipExpiry() {
+  stopPolling();
+  state.session = null;
+  state.replyInFlight = false;
+  state.awaiting = false;
+  state.lastSeq = 0;
+  resetPanel();
+  if (scene && camera && [S.PANEL, S.CLOSING, S.SEATED].includes(state.name)) {
+    setState(S.OVERVIEW);
+  }
+}
+
+window.addEventListener('huitong:auth-logout', () => {
+  resetSceneForAuth();
+});
+window.addEventListener('huitong:room-membership-expired', () => {
+  resetSceneForRoomMembershipExpiry();
+});
 
 /* 启动 */
 window.addEventListener('huitong:enter', () => { handleWorkspaceEnter(); });
